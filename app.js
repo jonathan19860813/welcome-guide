@@ -86,9 +86,18 @@ $('#btnLink').onclick=()=>{const clean=JSON.parse(JSON.stringify(data));for(cons
  $('#modal').hidden=false};
 let lastQR=null;
 $('#btnPrint').onclick=()=>{if(!lastQR)return toast('No QR code to print');window.print()};
-$('#btnPng').onclick=()=>{if(!lastQR)return toast('No QR code to download');const n=lastQR.getModuleCount(),cs=10,m=4,sz=(n+m*2)*cs,c=document.createElement('canvas');c.width=c.height=sz;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,sz,sz);x.fillStyle='#000';
- for(let r=0;r<n;r++)for(let k=0;k<n;k++)if(lastQR.isDark(r,k))x.fillRect((k+m)*cs,(r+m)*cs,cs,cs);
- const a=document.createElement('a');a.download=((data.property||'guest-guide').replace(/[^\w-]+/g,'-'))+'-qr.png';a.href=c.toDataURL('image/png');document.body.appendChild(a);a.click();a.remove()};
+function qrCanvas(){const n=lastQR.getModuleCount(),cs=10,m=4,sz=(n+m*2)*cs,c=document.createElement('canvas');c.width=c.height=sz;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,sz,sz);x.fillStyle='#000';
+ for(let r=0;r<n;r++)for(let k=0;k<n;k++)if(lastQR.isDark(r,k))x.fillRect((k+m)*cs,(r+m)*cs,cs,cs);return c}
+const qrName=()=>((data.property||'guest-guide').replace(/[^\w-]+/g,'-'))+'-qr.png';
+$('#btnPng').onclick=()=>{if(!lastQR)return toast('No QR code to download');const c=qrCanvas();
+ const a=document.createElement('a');a.download=qrName();a.href=c.toDataURL('image/png');document.body.appendChild(a);a.click();a.remove()};
+$('#btnShare').onclick=async()=>{const url=$('#linkOut').value;if(!url)return;
+ if(!navigator.share)return copy(url,'Link copied');
+ const base={title:(data.property||'Guest guide')+' – Welcome Guide',text:'Here is your welcome guide for '+(data.property||'your stay')+':',url};
+ const isAbort=e=>e&&e.name==='AbortError';
+ if(lastQR&&navigator.canShare){try{const blob=await new Promise(r=>qrCanvas().toBlob(r,'image/png'));const file=new File([blob],qrName(),{type:'image/png'});
+  if(navigator.canShare({files:[file]})){await navigator.share({...base,files:[file]});return}}catch(e){if(isAbort(e))return}}
+ try{await navigator.share(base)}catch(e){if(!isAbort(e))copy(url,'Link copied')}};
 $('#tabEdit').onclick=()=>{document.body.classList.remove('showPrev');$('#tabEdit').classList.add('on');$('#tabPrev').classList.remove('on');scrollTo(0,0)};
 $('#tabPrev').onclick=()=>{document.body.classList.add('showPrev');$('#tabPrev').classList.add('on');$('#tabEdit').classList.remove('on');scrollTo(0,0)};
 $('#btnCopy').onclick=()=>copy($('#linkOut').value,'Link copied');$('#btnClose').onclick=()=>$('#modal').hidden=true;

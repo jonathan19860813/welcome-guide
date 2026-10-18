@@ -1,0 +1,11 @@
+keys/
+key-service/node_modules/
+key-service/.dev.vars
+key-service/.wrangler/
+*.secret
+key-service/
+tools/
+SELLER-GUIDE.md
+BUILD-LIST.md
+marketing/
+screenshots/
