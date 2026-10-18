@@ -1,0 +1,38 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Welcome Guide</title><link rel="stylesheet" href="style.css"></head><body>
+<div id="editor" hidden>
+ <header class="top"><h1>🏡 Welcome Guide Builder</h1>
+  <div class="actions"><button id="btnExample" class="ghost">Load example</button><button id="btnClear" class="ghost">Clear</button><button id="btnLink" class="primary">Create guest link</button></div></header>
+ <main class="wrap">
+  <form id="form" class="panel" onsubmit="return false">
+   <fieldset><legend>Property</legend>
+    <label>Property name<input name="property"></label><label>Host name<input name="host"></label>
+    <label>Welcome message<textarea name="welcome" rows="3"></textarea></label>
+    <label>Address<textarea name="address" rows="2"></textarea></label>
+    <label>Map link for address (optional)<input name="addressMap" placeholder="https://maps.google.com/..."></label></fieldset>
+   <fieldset><legend>Check-in / Check-out</legend><div class="row">
+    <label>Check-in from<input name="checkin" type="time"></label><label>Check-out by<input name="checkout" type="time"></label></div>
+    <label>Check-in instructions<textarea name="checkinNotes" rows="3"></textarea></label>
+    <label>Check-out instructions<textarea name="checkoutNotes" rows="2"></textarea></label></fieldset>
+   <fieldset><legend>Wi-Fi</legend><div class="row"><label>Network name<input name="wifiName"></label><label>Password<input name="wifiPass"></label></div></fieldset>
+   <fieldset><legend>House rules</legend><div class="list" data-list="rules"></div><button type="button" class="add" data-add="rules">+ Add rule</button></fieldset>
+   <fieldset><legend>Appliances &amp; how-to</legend><div class="list" data-list="howto"></div><button type="button" class="add" data-add="howto">+ Add note</button></fieldset>
+   <fieldset><legend>Parking</legend><textarea name="parking" rows="2"></textarea></fieldset>
+   <fieldset><legend>Local recommendations</legend><div class="list" data-list="recs"></div><button type="button" class="add" data-add="recs">+ Add place</button></fieldset>
+   <fieldset><legend>Contacts</legend><div class="row"><label>Host phone<input name="hostPhone" type="tel" placeholder="+27 82 123 4567"></label><label>WhatsApp<input name="hostWhatsapp" type="tel"></label></div>
+    <p class="hint">Emergency numbers (SA defaults — edit as needed)</p><div class="list" data-list="emergency"></div><button type="button" class="add" data-add="emergency">+ Add contact</button></fieldset>
+   <fieldset><legend>Checkout checklist</legend><div class="list" data-list="checklist"></div><button type="button" class="add" data-add="checklist">+ Add item</button></fieldset>
+   <p class="hint" id="saved">Autosaved on this device.</p>
+  </form>
+  <section class="previewWrap"><div class="previewLabel">Live guest preview</div><div class="phone"><div id="preview" class="guide"></div></div></section>
+ </main>
+ <div id="modal" class="modal" hidden><div class="card">
+  <h2>Guest link ready</h2><p class="hint" id="linkInfo"></p>
+  <textarea id="linkOut" rows="4" readonly></textarea>
+  <div class="actions"><button id="btnCopy" class="primary">Copy link</button><a id="btnOpen" class="ghost btn" target="_blank">Open</a><button id="btnClose" class="ghost">Close</button></div>
+  <div id="qr"></div><p class="hint">Print this QR code and leave it in the unit.</p></div></div>
+</div>
+<div id="guest" class="guide guestPage" hidden></div>
+<div id="toast" class="toast"></div>
+<script src="lib/lz-string.min.js"></script><script src="lib/qrcode.js"></script><script src="app.js"></script>
+</body></html>
