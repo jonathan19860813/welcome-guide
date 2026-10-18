@@ -111,3 +111,11 @@ ul.clean li::before{content:"";position:absolute;left:6px;top:19px;width:8px;hei
  .modal{padding:var(--s2)}.modal .card{padding:20px}
 }
 @media print{body *{visibility:hidden}#modal,#modal #qr,#modal #qr *{visibility:visible}#modal{position:absolute;inset:0;background:#fff}#modal #qr{position:absolute;top:2cm;left:0;right:0;border:0}#modal #qr svg{width:10cm;height:10cm}}
+/* lock screen */
+.lock{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:var(--s4);background:radial-gradient(120% 70% at 100% 0,#2f6f5e 0,transparent 60%),linear-gradient(160deg,#0f4c47,#2d3a22)}
+.lockCard{background:var(--cream);border-radius:var(--r-lg);padding:28px 22px;max-width:440px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+.lockCard h1{font-size:26px;color:var(--teal);margin:var(--s4) 0 var(--s2);line-height:1.15}.lockCard>p{color:var(--muted);margin:0 0 var(--s3)}
+.logo.big{width:48px;height:48px;font-size:26px;background:var(--teal);color:var(--sand);border-radius:13px}
+#lockKey{font-family:ui-monospace,Menlo,monospace;font-size:15px}#lockBtn{width:100%;margin-top:var(--s2);min-height:52px;font-size:17px}
+.lockErr{color:var(--danger);font-weight:600;font-size:14px;min-height:1em;margin:var(--s2) 0}
+.lockHelp{margin-top:var(--s4);padding-top:var(--s3);border-top:1px solid var(--sand-2);font-size:14px}.lockHelp a{color:var(--teal);font-weight:600}.lockHelp .btn{width:100%}

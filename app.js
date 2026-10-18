@@ -64,7 +64,8 @@ if(h.startsWith('#g=')){const g=$('#guest');g.hidden=false;let d=null;
  if(nav){addEventListener('scroll',spy,{passive:true});spy()}
  return}
 
-// editor mode
+// editor mode (behind purchase gate)
+wgGate(function(){
 $('#editor').hidden=false;const form=$('#form');let data;
 try{data=Object.assign(blank(),JSON.parse(localStorage.getItem(KEY)||'null')||{})}catch(e){data=blank()}
 function buildLists(){document.querySelectorAll('[data-list]').forEach(box=>{const k=box.dataset.list,f=LISTS[k];
@@ -93,4 +94,5 @@ $('#tabPrev').onclick=()=>{document.body.classList.add('showPrev');$('#tabPrev')
 $('#btnCopy').onclick=()=>copy($('#linkOut').value,'Link copied');$('#btnClose').onclick=()=>$('#modal').hidden=true;
 window.addEventListener('hashchange',()=>location.reload());
 fill();
+});
 })();
