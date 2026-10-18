@@ -29,12 +29,16 @@ nl:{welcome:'Welkom in',arrive:'Aankomst',cin:'Inchecken',cout:'Uitchecken',wifi
 es:{welcome:'Bienvenido a',arrive:'Llegada',cin:'Entrada',cout:'Salida',wifi:'Wi-Fi',net:'Red',tap:'Toca para copiar',addr:'Dirección',maps:'Abrir en Mapas',park:'Aparcamiento',rules:'Normas de la casa',how:'Cómo funciona',local:'Recomendaciones locales',map:'Mapa',host:'Anfitrión',yourHost:'tu anfitrión',call:'Llamar',waHost:'WhatsApp del anfitrión',help:'Contactos y emergencias',out:'Salida',bye:'¡Feliz estancia!',pwCopied:'Contraseña copiada',unit:'Tu alojamiento',code:'Código de puerta / caja de llaves',copy:'Copiar',copied:'Copiado'},
 pt:{welcome:'Bem-vindo a',arrive:'Chegada',cin:'Check-in',cout:'Check-out',wifi:'Wi-Fi',net:'Rede',tap:'Toque para copiar',addr:'Endereço',maps:'Abrir no Maps',park:'Estacionamento',rules:'Regras da casa',how:'Como funciona',local:'Dicas locais',map:'Mapa',host:'Anfitrião',yourHost:'seu anfitrião',call:'Ligar',waHost:'WhatsApp do anfitrião',help:'Contatos e emergências',out:'Saída',bye:'Boa estadia!',pwCopied:'Senha copiada',unit:'Sua acomodação',code:'Código da porta / cofre de chaves',copy:'Copiar',copied:'Copiado'}};
 const LANGS=Object.keys(I18N);
-const UF=['name','note','wifiName','wifiPass','code','extra'];
+// pt (Portugal) existing; extra languages from langs.js
+for(const k in (window.WG_TX||{})){const v=WG_TX[k].split('|');I18N[k]=Object.fromEntries(WG_KEYS.map((x,j)=>[x,v[j]||I18N.en[x]]))}
+const isRTL=l=>!!(window.WG_META&&WG_META[l]&&WG_META[l][3]);const htmlLang=l=>(window.WG_HTMLLANG||{})[l]||l;
+const UF=['num','name','bldg','note','wifiName','wifiPass','code','extra'];
 // Build the guest-facing guide object: shared guide (cleaned) merged with one unit's details.
+function ulabel(u){if(!u)return '';const a=[u.num?'Unit '+u.num:'',u.name].filter(Boolean).join(' · ');return [u.bldg,a].filter(Boolean).join(' – ')}
 function guestData(data,u){const c=JSON.parse(JSON.stringify(data));delete c.multi;delete c.units;delete c.unitPrefix;delete c.unitCount;
  for(const k in LISTS)c[k]=(c[k]||[]).filter(o=>Object.values(o).some(v=>v));
  if(!c.lang||c.lang==='en'||!I18N[c.lang])delete c.lang;
- if(u){c.unit=u.name||'';if(u.note)c.unitNote=u.note;if(u.code)c.code=u.code;if(u.extra)c.unitExtra=u.extra;if(u.wifiName)c.wifiName=u.wifiName;if(u.wifiPass||u.wifiName)c.wifiPass=u.wifiPass||''}
+ if(u){c.unit=[u.num?'Unit '+u.num:'',u.name].filter(Boolean).join(' · ');if(u.bldg)c.building=u.bldg;if(u.note)c.unitNote=u.note;if(u.code)c.code=u.code;if(u.extra)c.unitExtra=u.extra;if(u.wifiName)c.wifiName=u.wifiName;if(u.wifiPass||u.wifiName)c.wifiPass=u.wifiPass||''}
  for(const k in c)if(c[k]===''||(Array.isArray(c[k])&&!c[k].length&&k!=='emergency'))delete c[k];
  return c}
 const linkFor=(gd)=>location.href.split('#')[0]+'#g='+LZString.compressToEncodedURIComponent(JSON.stringify(gd));
@@ -64,7 +68,7 @@ function render(d){const T=I18N[d.lang]||I18N.en;
  if(c)sec('help','☎️ '+esc(T.help),`<div class="contacts">${c}</div>`);
  const cl=(d.checklist||[]).filter(x=>x.text);if(cl.length||d.checkoutNotes)sec('out','👋 '+T.out,`${d.checkoutNotes?`<p class="pre">${esc(d.checkoutNotes)}</p>`:''}<div class="check">${cl.map((x,i)=>`<label><input type="checkbox" data-ci="${i}"> ${esc(x.text)}</label>`).join('')}</div>`);
  if(!d.property&&!s.length)return '<div class="empty">Start filling in the form — your guest guide appears here.</div>';
- return `<div class="hero"><small>${T.welcome}</small><h1>${esc(d.property||'Your stay')}</h1>${d.unit?`<p class="unitName">${esc(d.unit)}</p>`:''}${d.welcome?`<p>${esc(d.welcome)}</p>`:''}${d.host?`<p style="margin-top:.6rem;opacity:.8">— ${esc(d.host)}, ${T.yourHost}</p>`:''}</div><nav class="nav">${nav.join('')}</nav>${s.join('')}<div class="foot">${T.bye} ✨</div>`;
+ return `<div class="hero"><small>${T.welcome}</small><h1>${esc(d.property||'Your stay')}</h1>${d.building?`<p class="bldgName">${esc(d.building)}</p>`:''}${d.unit?`<p class="unitName">${esc(d.unit)}</p>`:''}${d.welcome?`<p>${esc(d.welcome)}</p>`:''}${d.host?`<p style="margin-top:.6rem;opacity:.8">— ${esc(d.host)}, ${T.yourHost}</p>`:''}</div><nav class="nav">${nav.join('')}</nav>${s.join('')}<div class="foot">${T.bye} ✨</div>`;
 }
 function wire(root){root.addEventListener('click',e=>{const c=e.target.closest('[data-copy]');if(c){copy(c.dataset.copy,c.dataset.msg||'Copied');return}
  const j=e.target.closest('[data-jump]');if(j){e.preventDefault();const el=root.querySelector('#s-'+j.dataset.jump);el&&el.scrollIntoView({behavior:'smooth',block:'start'})}})}
@@ -74,7 +78,7 @@ const h=location.hash;
 if(h.startsWith('#g=')){const g=$('#guest');g.hidden=false;let d=null;
  try{d=JSON.parse(LZString.decompressFromEncodedURIComponent(h.slice(3)))}catch(e){}
  if(!d){g.innerHTML='<div class="empty">This guide link looks incomplete. Please ask your host to resend it.</div>';return}
- document.documentElement.lang=I18N[d.lang]?d.lang:'en';document.title=(d.property||'Welcome')+(d.unit?' · '+d.unit:'')+' – Guest guide';g.innerHTML=render(d);wire(g);
+ document.documentElement.lang=I18N[d.lang]?htmlLang(d.lang):'en';if(isRTL(d.lang)){g.dir='rtl';document.documentElement.dir='rtl'}document.title=(d.property||'Welcome')+(d.building?' · '+d.building:'')+(d.unit?' · '+d.unit:'')+' – Guest guide';g.innerHTML=render(d);wire(g);
  let hs=0;for(const ch of h)hs=(hs*31+ch.charCodeAt(0))|0;const TK='wg-ticks-'+hs;
  let ticks=[];try{ticks=JSON.parse(localStorage.getItem(TK)||'[]')}catch(e){}
  g.querySelectorAll('[data-ci]').forEach(c=>{c.checked=ticks.includes(+c.dataset.ci);c.onchange=()=>{const t=[...g.querySelectorAll('[data-ci]')].filter(x=>x.checked).map(x=>+x.dataset.ci);localStorage.setItem(TK,JSON.stringify(t))}});
@@ -87,21 +91,24 @@ if(h.startsWith('#g=')){const g=$('#guest');g.hidden=false;let d=null;
 
 // editor mode (behind purchase gate)
 wgGate(function(){
-$('#editor').hidden=false;const form=$('#form');let data;
+$('#editor').hidden=false;{const sel=document.querySelector('select[name=lang]'),M=window.WG_META||{},o=k=>`<option value="${k}" lang="${htmlLang(k)}">${M[k][0]===M[k][1]?M[k][0]:M[k][0]+' — '+M[k][1]}</option>`;
+ sel.innerHTML=o('en')+WG_REGIONS.map(([r,n])=>`<optgroup label="${n}">`+Object.keys(M).filter(k=>M[k][2]===r&&I18N[k]).sort((a,b)=>M[a][1].localeCompare(M[b][1])).map(o).join('')+'</optgroup>').join('')}const form=$('#form');let data;
 try{data=Object.assign(blank(),JSON.parse(localStorage.getItem(KEY)||'null')||{})}catch(e){data=blank()}
 function buildLists(){document.querySelectorAll('[data-list]').forEach(box=>{const k=box.dataset.list,f=LISTS[k];
  box.innerHTML=(data[k]||[]).map((it,i)=>`<div class="item">${f.map(x=>`<label class="f">${LB[k][x]}`+(x==='note'&&k==='howto'?`<textarea rows="2" data-k="${k}" data-i="${i}" data-f="${x}" placeholder="${PH[x]}">${esc(it[x])}</textarea>`:`<input data-k="${k}" data-i="${i}" data-f="${x}" placeholder="${k==='rules'?'e.g. No smoking indoors':k==='checklist'?'e.g. Wash dishes':PH[x]}" value="${esc(it[x])}"${k==='emergency'&&x==='number'?' type="tel"':''}>`)+'</label>').join('')}<button type="button" class="rm" data-rm="${k}" data-i="${i}" aria-label="Remove">✕</button></div>`).join('')})}
-function norm(){if(!Array.isArray(data.units))data.units=[];if(!I18N[data.lang])data.lang='en';if(data.unitPrefix==null)data.unitPrefix='Unit'}
-function buildUnits(){$('#multi').checked=!!data.multi;$('#unitsBox').hidden=!data.multi;$('#unitCount').value=data.units.length||data.unitCount||'';$('#unitPrefix').value=data.unitPrefix||'';
- $('#unitList').innerHTML=data.units.map((u,i)=>`<details class="unit"><summary><input data-u="${i}" data-f="name" value="${esc(u.name)}" aria-label="Unit name" onclick="event.stopPropagation()"><span class="hint">${u.note||u.wifiName||u.code||u.extra?'✎ has details':'details ▾'}</span></summary>
+function norm(){if(!Array.isArray(data.units))data.units=[];data.units=data.units.map(u=>Object.assign({num:'',name:'',bldg:'',note:'',wifiName:'',wifiPass:'',code:'',extra:''},u));if(!I18N[data.lang])data.lang='en';if(data.unitPrefix==null)data.unitPrefix='Unit'}
+function buildUnits(){$('#multi').checked=!!data.multi;$('#unitsBox').hidden=!data.multi;$('#unitCount').value=data.unitCount||'';$('#unitPrefix').value=data.unitPrefix||'';
+ $('#unitList').innerHTML=data.units.map((u,i)=>`<div class="unit"><div class="uhead"><b class="ulab">${esc(ulabel(u)||'Unit '+(i+1))}</b><button type="button" class="rm" data-urm="${i}" aria-label="Remove unit">✕</button></div>
+ <div class="row3"><label>Unit number<input data-u="${i}" data-f="num" value="${esc(u.num)}" placeholder="e.g. 12" inputmode="text"></label><label>Unit name<input data-u="${i}" data-f="name" value="${esc(u.name)}" placeholder="e.g. Sea View"></label><label>Building / property<input data-u="${i}" data-f="bldg" value="${esc(u.bldg)}" placeholder="e.g. Block A" list="bldgList"></label></div>
+ <details><summary class="hint">${u.note||u.wifiName||u.code||u.extra?'✎ More details (has details)':'More details (optional) ▾'}</summary>
  <label>Unit note<textarea rows="2" data-u="${i}" data-f="note" placeholder="e.g. Ground floor, sea-facing">${esc(u.note)}</textarea></label>
  <div class="row"><label>Wi-Fi name (override)<input data-u="${i}" data-f="wifiName" value="${esc(u.wifiName)}" placeholder="Leave blank to use shared"></label><label>Wi-Fi password (override)<input data-u="${i}" data-f="wifiPass" value="${esc(u.wifiPass)}"></label></div>
  <label>Door / lockbox code<input data-u="${i}" data-f="code" value="${esc(u.code)}"></label>
- <label>Extra note<textarea rows="2" data-u="${i}" data-f="extra">${esc(u.extra)}</textarea></label></details>`).join('');$('#unitLinksBtn').hidden=!data.units.length}
+ <label>Extra note<textarea rows="2" data-u="${i}" data-f="extra">${esc(u.extra)}</textarea></label></details></div>`).join('');$('#bldgList').innerHTML=[...new Set(data.units.map(u=>u.bldg).filter(Boolean))].map(b=>`<option value="${esc(b)}">`).join('');$('#unitLinksBtn').hidden=!data.units.length}
 function fill(){norm();form.querySelectorAll('[name]').forEach(el=>el.value=data[el.name]||'');buildLists();buildUnits();update()}
-function update(){localStorage.setItem(KEY,JSON.stringify(data));const pv=$('#preview');pv.lang=data.lang||'en';pv.innerHTML=render(guestData(data,data.multi&&data.units[0]?data.units[0]:null))}
+function update(){localStorage.setItem(KEY,JSON.stringify(data));const pv=$('#preview');pv.lang=htmlLang(data.lang||'en');pv.dir=isRTL(data.lang)?'rtl':'ltr';pv.innerHTML=render(guestData(data,data.multi&&data.units[0]?data.units[0]:null))}
 wire($('#preview'));
-form.addEventListener('input',e=>{const t=e.target;if(t.id==='multi'){data.multi=t.checked;buildUnits()}else if(t.id==='unitPrefix'){data.unitPrefix=t.value}else if(t.id==='unitCount'){data.unitCount=t.value;return}else if(t.dataset.u){data.units[+t.dataset.u][t.dataset.f]=t.value}else if(t.name)data[t.name]=t.value;else if(t.dataset.k)data[t.dataset.k][+t.dataset.i][t.dataset.f]=t.value;update()});
+form.addEventListener('input',e=>{const t=e.target;if(t.id==='multi'){data.multi=t.checked;buildUnits()}else if(t.id==='unitPrefix'){data.unitPrefix=t.value}else if(t.id==='unitCount'){data.unitCount=t.value;return}else if(t.dataset.u){const u=data.units[+t.dataset.u];u[t.dataset.f]=t.value;const l=t.closest('.unit').querySelector('.ulab');l.textContent=ulabel(u)||'Unit '+(+t.dataset.u+1)}else if(t.name)data[t.name]=t.value;else if(t.dataset.k)data[t.dataset.k][+t.dataset.i][t.dataset.f]=t.value;update()});
 form.addEventListener('click',e=>{const a=e.target.closest('[data-add]'),r=e.target.closest('[data-rm]');
  if(a){const k=a.dataset.add;data[k].push(Object.fromEntries(LISTS[k].map(f=>[f,''])));buildLists();update();const ins=form.querySelectorAll(`[data-k="${k}"]`);ins.length&&ins[ins.length-LISTS[k].length].focus()}
  if(r){const k=r.dataset.rm,i=+r.dataset.i,[gone]=data[k].splice(i,1);buildLists();update();toast('Item removed',()=>{data[k].splice(i,0,gone);buildLists();update()})}});
@@ -114,21 +121,26 @@ function showLink(url,name){curName=name||'';$('#modalTitle').textContent=name?'
  const q=$('#qr');q.innerHTML='';lastQR=makeQR(url);if(lastQR)q.innerHTML=lastQR.createSvgTag({cellSize:4,margin:4,scalable:true});else q.innerHTML='<p class="hint">Too much content for a QR code — shorten some text, or share the link directly.</p>';
  $('#modal').hidden=false}
 let unitLinks=[];
-function computeUnitLinks(){unitLinks=data.units.map((u,i)=>({name:u.name||((data.unitPrefix||'Unit')+' '+(i+1)),url:linkFor(guestData(data,u))}));return unitLinks}
+function computeUnitLinks(){unitLinks=data.units.map((u,i)=>({i,name:ulabel(u)||('Unit '+(i+1)),url:linkFor(guestData(data,u))}));return unitLinks}
 function showUnits(){computeUnitLinks();const max=Math.max(0,...unitLinks.map(x=>x.url.length));
  $('#unitsInfo').textContent=`${unitLinks.length} units · longest link ${max} characters. Each link holds the shared guide plus that unit's details.`;
- $('#unitLinks').innerHTML=unitLinks.map((x,i)=>`<div class="ulink"><b>${esc(x.name)}</b><span class="hint">${x.url.length} chars</span><div class="actions"><button class="ghost" data-ucopy="${i}">Copy</button><button class="ghost" data-ushare="${i}">📤 Share</button><button class="ghost" data-uqr="${i}">QR</button><a class="ghost btn" target="_blank" href="${esc(x.url)}">Open</a></div></div>`).join('');
+ $('#unitLinks').innerHTML=unitLinks.map((x,i)=>`<div class="ulink"><b>${esc(x.name)}</b><span class="hint">${x.url.length} chars</span><div class="actions"><button class="ghost" data-ucopy="${i}">Copy</button><button class="ghost" data-ushare="${i}">📤 Share</button><button class="ghost" data-uqr="${i}">QR</button><a class="ghost btn" target="_blank" href="${esc(x.url)}">Open</a><button class="ghost rmu" data-urm="${i}" aria-label="Remove unit">✕</button></div></div>`).join('');
  $('#unitsModal').hidden=false}
 $('#btnLink').onclick=()=>{if(data.multi&&data.units.length)return showUnits();showLink(linkFor(guestData(data,null)))};
 $('#unitLinksBtn').onclick=showUnits;
+const newUnit=()=>({num:'',name:'',bldg:'',note:'',wifiName:'',wifiPass:'',code:'',extra:''});
+function addUnits(n){data.units.push(...Array.from({length:n},newUnit));buildUnits();update();const r=$('#unitList').querySelectorAll('.unit');r[r.length-n]&&r[r.length-n].querySelector('input').focus()}
+$('#addUnit').onclick=()=>addUnits(1);$('#add5Units').onclick=()=>addUnits(5);
+function rmUnit(i){const [gone]=data.units.splice(i,1);if(!gone)return;buildUnits();update();if(!$('#unitsModal').hidden)showUnits();
+ toast('Unit removed',()=>{data.units.splice(i,0,gone);buildUnits();update();if(!$('#unitsModal').hidden)showUnits()})}
+$('#unitList').addEventListener('click',e=>{const b=e.target.closest('[data-urm]');if(b)rmUnit(+b.dataset.urm)});
 $('#genUnits').onclick=()=>{const n=Math.floor(+$('#unitCount').value);if(!(n>=1&&n<=500))return toast('Enter a unit count from 1 to 500');
  const pre=($('#unitPrefix').value||'').trim();data.unitPrefix=pre;
- if(n<data.units.length&&data.units.slice(n).some(u=>UF.slice(1).some(f=>u[f]))&&!confirm(`Remove units ${n+1}–${data.units.length} and their details?`))return;
- const old=data.units;data.units=Array.from({length:n},(_,i)=>{const o=old[i];const auto=(pre?pre+' ':'')+(i+1);
-  if(o){if(!o.name||o._auto){o.name=auto;o._auto=1}return o}return {name:auto,note:'',wifiName:'',wifiPass:'',code:'',extra:'',_auto:1}});
- buildUnits();update();toast(n+' units ready')};
-$('#unitList').addEventListener('input',e=>{const t=e.target;if(t.dataset.f==='name'&&data.units[+t.dataset.u])delete data.units[+t.dataset.u]._auto});
-$('#unitLinks').onclick=e=>{const b=e.target.closest('button');if(!b)return;const i=+(b.dataset.ucopy??b.dataset.ushare??b.dataset.uqr),x=unitLinks[i];if(!x)return;
+ if(n>50&&!confirm(`Add ${n} units?`))return;
+ const nums=data.units.map(u=>parseInt(u.num,10)).filter(x=>x>0),start=(nums.length?Math.max(...nums):0)+1;
+ for(let k=start;k<start+n;k++)data.units.push(Object.assign(newUnit(),{num:String(k),name:pre&&pre.toLowerCase()!=='unit'?pre+' '+k:''}));
+ buildUnits();update();toast(n+' units added ('+data.units.length+' total)')};
+$('#unitLinks').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.urm!=null)return rmUnit(+b.dataset.urm);const i=+(b.dataset.ucopy??b.dataset.ushare??b.dataset.uqr),x=unitLinks[i];if(!x)return;
  if(b.dataset.ucopy!=null)copy(x.url,'Link copied');else if(b.dataset.ushare!=null){lastQR=makeQR(x.url);shareLink(x.url,x.name)}else{$('#unitsModal').hidden=true;showLink(x.url,x.name)}};
 $('#unitsClose').onclick=()=>$('#unitsModal').hidden=true;
 function buildAllQR(){computeUnitLinks();const prop=esc(data.property||'');

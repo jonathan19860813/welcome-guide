@@ -27,9 +27,11 @@
    <fieldset><legend><span class="ic" aria-hidden="true">🏢</span>Units</legend>
     <label class="chk"><input type="checkbox" id="multi"> This property has multiple units (rooms, flats, cottages)</label>
     <div id="unitsBox" hidden><p class="hint">Everything else in this form is the shared guide. Each unit gets its own link and QR code: the shared guide plus that unit's details below (all optional). A unit's Wi-Fi replaces the shared Wi-Fi.</p>
-     <div class="row"><label>Number of units<input id="unitCount" type="number" min="1" max="500" inputmode="numeric" placeholder="e.g. 12"></label><label>Name prefix<input id="unitPrefix" placeholder="Unit"></label></div>
-     <button type="button" class="add" id="genUnits">Generate units</button>
-     <div id="unitList" class="units"></div>
+     <div id="unitList" class="units"></div><datalist id="bldgList"></datalist>
+     <div class="actions"><button type="button" class="add" id="addUnit">+ Add unit</button><button type="button" class="add ghost" id="add5Units">+ Add 5 units</button></div>
+     <details class="bulk"><summary>Bulk add (optional)</summary><p class="hint">Appends numbered units after your existing ones. Nothing is removed.</p>
+     <div class="row"><label>How many<input id="unitCount" type="number" min="1" max="500" inputmode="numeric" placeholder="e.g. 12"></label><label>Name prefix (optional)<input id="unitPrefix" placeholder="Unit"></label></div>
+     <button type="button" class="add" id="genUnits">Add units</button></details>
      <button type="button" class="primary" id="unitLinksBtn" hidden>Show unit links &amp; QR codes</button></div></fieldset>
    <fieldset><legend><span class="ic" aria-hidden="true">🔑</span>Check-in / Check-out</legend><div class="row">
     <label>Check-in from<input name="checkin" type="time"></label><label>Check-out by<input name="checkout" type="time"></label></div>
@@ -59,5 +61,5 @@
 </div>
 <div id="guest" class="guide guestPage" hidden></div>
 <div id="toast" class="toast"><span id="toastMsg"></span><button id="toastUndo" hidden>Undo</button></div>
-<script src="lib/lz-string.min.js"></script><script src="lib/qrcode.js"></script><script src="lib/minizip.js"></script><script src="lib/nacl-fast.min.js"></script><script src="config.js"></script><script src="gate.js"></script><script src="app.js"></script>
+<script src="lib/lz-string.min.js"></script><script src="lib/qrcode.js"></script><script src="lib/minizip.js"></script><script src="lib/nacl-fast.min.js"></script><script src="config.js"></script><script src="gate.js"></script><script src="langs.js"></script><script src="app.js"></script>
 </body></html>
