@@ -149,3 +149,5 @@ ul.clean li::before{content:"";position:absolute;left:6px;top:19px;width:8px;hei
 /* v4: languages */
 #guest,#preview{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Noto Sans Ethiopic","Nyala","Noto Sans Thai","Leelawadee UI","Noto Sans Devanagari","Nirmala UI","Noto Sans CJK SC","PingFang SC","Hiragino Sans","Microsoft YaHei","Malgun Gothic","Noto Naskh Arabic","Segoe UI Historic",sans-serif}
 [dir=rtl] .contact,[dir=rtl] .wifi{text-align:right}[dir=rtl] .pw,[dir=rtl] .pill{direction:ltr;unicode-bidi:isolate}[dir=rtl] .nav{direction:rtl}
+select{display:block;width:100%;font:inherit;font-size:16px;color:var(--ink);padding:10px 12px;min-height:44px;border:1px solid #d5cbb8;border-radius:var(--r-sm);margin-top:6px;background:#fff}
+#langBox label{font-weight:600}

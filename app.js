@@ -91,7 +91,7 @@ if(h.startsWith('#g=')){const g=$('#guest');g.hidden=false;let d=null;
 
 // editor mode (behind purchase gate)
 wgGate(function(){
-$('#editor').hidden=false;{const sel=document.querySelector('select[name=lang]'),M=window.WG_META||{},o=k=>`<option value="${k}" lang="${htmlLang(k)}">${M[k][0]===M[k][1]?M[k][0]:M[k][0]+' — '+M[k][1]}</option>`;
+$('#editor').hidden=false;if(window.WG_META&&window.WG_REGIONS){const sel=document.querySelector('select[name=lang]'),M=window.WG_META,o=k=>`<option value="${k}" lang="${htmlLang(k)}">${M[k][0]===M[k][1]?M[k][0]:M[k][0]+' — '+M[k][1]}</option>`;
  sel.innerHTML=o('en')+WG_REGIONS.map(([r,n])=>`<optgroup label="${n}">`+Object.keys(M).filter(k=>M[k][2]===r&&I18N[k]).sort((a,b)=>M[a][1].localeCompare(M[b][1])).map(o).join('')+'</optgroup>').join('')}const form=$('#form');let data;
 try{data=Object.assign(blank(),JSON.parse(localStorage.getItem(KEY)||'null')||{})}catch(e){data=blank()}
 function buildLists(){document.querySelectorAll('[data-list]').forEach(box=>{const k=box.dataset.list,f=LISTS[k];
