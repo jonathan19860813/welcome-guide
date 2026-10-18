@@ -1,7 +1,7 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="theme-color" content="#0f4c47"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Welcome Guide</title><link rel="stylesheet" href="style.css"></head><body>
 <div id="editor" hidden>
- <header class="top"><h1>🏡 Welcome Guide Builder</h1>
+ <header class="top"><h1><span class="logo" aria-hidden="true">W</span>Welcome Guide Builder</h1>
   <div class="actions"><button id="btnExample" class="ghost">Load example</button><button id="btnClear" class="ghost">Clear</button><button id="btnLink" class="primary">Create guest link</button></div>
 </header>
  <div class="seg" role="tablist"><button id="tabEdit" class="on">✏️ Edit</button><button id="tabPrev">👁️ Preview</button></div>
@@ -10,23 +10,23 @@
    <div class="intro"><b>How it works</b><ol><li>Fill in your details below (or tap <i>Load example</i> to see one). Everything saves automatically on this phone/browser only.</li><li>Tap <b>Create guest link</b>, then send the link on WhatsApp/email or print the QR code for the unit.</li><li>Guests open it in their phone browser — no app needed.</li></ol>
    <p>🔒 <b>Privacy:</b> everything you enter (Wi-Fi password, lockbox codes, address) is stored inside the link itself. Anyone with the link or QR code can read it — only share it with booked guests.</p>
    <p>🔁 <b>Changed something?</b> Make a new link and QR code after every edit. Old links keep showing the old details.</p></div>
-   <fieldset><legend>Property</legend>
+   <fieldset><legend><span class="ic" aria-hidden="true">🏡</span>Property</legend>
     <label>Property name<input name="property"></label><label>Host name<input name="host"></label>
     <label>Welcome message<textarea name="welcome" rows="3"></textarea></label>
     <label>Address<textarea name="address" rows="2"></textarea></label>
     <label>Map link for address (optional)<input name="addressMap" placeholder="https://maps.google.com/..."></label></fieldset>
-   <fieldset><legend>Check-in / Check-out</legend><div class="row">
+   <fieldset><legend><span class="ic" aria-hidden="true">🔑</span>Check-in / Check-out</legend><div class="row">
     <label>Check-in from<input name="checkin" type="time"></label><label>Check-out by<input name="checkout" type="time"></label></div>
     <label>Check-in instructions<textarea name="checkinNotes" rows="3"></textarea></label>
     <label>Check-out instructions<textarea name="checkoutNotes" rows="2"></textarea></label></fieldset>
-   <fieldset><legend>Wi-Fi</legend><div class="row"><label>Network name<input name="wifiName"></label><label>Password<input name="wifiPass"></label></div></fieldset>
-   <fieldset><legend>House rules</legend><p class="hint">One rule per line item, e.g. "No smoking indoors".</p><div class="list" data-list="rules"></div><button type="button" class="add" data-add="rules">+ Add rule</button></fieldset>
-   <fieldset><legend>Appliances &amp; how-to</legend><p class="hint">Ideas: load-shedding &amp; the inverter, gate remote / alarm, geyser, braai, DStv/TV, washing machine.</p><div class="list" data-list="howto"></div><button type="button" class="add" data-add="howto">+ Add note</button></fieldset>
-   <fieldset><legend>Parking</legend><textarea name="parking" rows="2"></textarea></fieldset>
-   <fieldset><legend>Local recommendations</legend><p class="hint">Map link: in Google Maps, find the place, tap <b>Share → Copy link</b>, and paste it here.</p><div class="list" data-list="recs"></div><button type="button" class="add" data-add="recs">+ Add place</button></fieldset>
-   <fieldset><legend>Contacts</legend><div class="row"><label>Host phone<input name="hostPhone" type="tel" placeholder="+27 82 123 4567"></label><label>WhatsApp<input name="hostWhatsapp" type="tel"></label></div>
+   <fieldset><legend><span class="ic" aria-hidden="true">📶</span>Wi-Fi</legend><div class="row"><label>Network name<input name="wifiName"></label><label>Password<input name="wifiPass"></label></div></fieldset>
+   <fieldset><legend><span class="ic" aria-hidden="true">📋</span>House rules</legend><p class="hint">One rule per line item, e.g. "No smoking indoors".</p><div class="list" data-list="rules"></div><button type="button" class="add" data-add="rules">+ Add rule</button></fieldset>
+   <fieldset><legend><span class="ic" aria-hidden="true">🛠️</span>Appliances &amp; how-to</legend><p class="hint">Ideas: load-shedding &amp; the inverter, gate remote / alarm, geyser, braai, DStv/TV, washing machine.</p><div class="list" data-list="howto"></div><button type="button" class="add" data-add="howto">+ Add note</button></fieldset>
+   <fieldset><legend><span class="ic" aria-hidden="true">🚗</span>Parking</legend><textarea name="parking" rows="2"></textarea></fieldset>
+   <fieldset><legend><span class="ic" aria-hidden="true">🌍</span>Local recommendations</legend><p class="hint">Map link: in Google Maps, find the place, tap <b>Share → Copy link</b>, and paste it here.</p><div class="list" data-list="recs"></div><button type="button" class="add" data-add="recs">+ Add place</button></fieldset>
+   <fieldset><legend><span class="ic" aria-hidden="true">☎️</span>Contacts</legend><div class="row"><label>Host phone<input name="hostPhone" type="tel" placeholder="+27 82 123 4567"></label><label>WhatsApp<input name="hostWhatsapp" type="tel"></label></div>
     <p class="hint">Type numbers as you would dial them, e.g. 082 123 4567 or +27 82 123 4567 — both work. WhatsApp numbers starting with 0 are converted to +27 automatically.</p><p class="hint"><b>Emergency &amp; useful numbers</b> (SA defaults included — edit as needed)</p><div class="list" data-list="emergency"></div><button type="button" class="add" data-add="emergency">+ Add contact</button></fieldset>
-   <fieldset><legend>Checkout checklist</legend><div class="list" data-list="checklist"></div><button type="button" class="add" data-add="checklist">+ Add item</button></fieldset>
+   <fieldset><legend><span class="ic" aria-hidden="true">✅</span>Checkout checklist</legend><div class="list" data-list="checklist"></div><button type="button" class="add" data-add="checklist">+ Add item</button></fieldset>
    <p class="hint" id="saved">✓ Autosaved on this device.</p>
   </form>
   <section class="previewWrap"><div class="previewLabel">Live guest preview</div><div class="phone"><div id="preview" class="guide"></div></div></section>
