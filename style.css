@@ -119,3 +119,22 @@ ul.clean li::before{content:"";position:absolute;left:6px;top:19px;width:8px;hei
 #lockKey{font-family:ui-monospace,Menlo,monospace;font-size:15px}#lockBtn{width:100%;margin-top:var(--s2);min-height:52px;font-size:17px}
 .lockErr{color:var(--danger);font-weight:600;font-size:14px;min-height:1em;margin:var(--s2) 0}
 .lockHelp{margin-top:var(--s4);padding-top:var(--s3);border-top:1px solid var(--sand-2);font-size:14px}.lockHelp a{color:var(--teal);font-weight:600}.lockHelp .btn{width:100%}
+/* v3: units, all-QR page */
+.unitName{font-size:1.05rem;font-weight:600;opacity:.9;margin:.15rem 0 .2rem}
+.chk{display:flex;gap:.5rem;align-items:center;font-weight:600}.chk input{width:auto}
+.units{display:flex;flex-direction:column;gap:.4rem;margin:.6rem 0}
+.unit{border:1px solid #d9e2e0;border-radius:10px;padding:.4rem .6rem;background:#fff}
+.unit summary{display:flex;gap:.5rem;align-items:center;cursor:pointer;list-style:none}.unit summary::-webkit-details-marker{display:none}
+.unit summary input{flex:1;margin:0}.unit summary .hint{white-space:nowrap;margin:0}
+.unit[open]{background:#f6faf9}
+#unitsModal .card{max-height:90vh;overflow:auto}
+.ulinks{display:flex;flex-direction:column;gap:.4rem;margin-top:.8rem}
+.ulink{border-top:1px solid #e3e9e8;padding-top:.5rem;display:flex;flex-wrap:wrap;gap:.3rem .6rem;align-items:center}.ulink .actions{width:100%;margin:0;display:flex;flex-wrap:wrap;gap:.3rem}
+.ulink .actions button,.ulink .actions .btn{padding:.35rem .7rem;font-size:.85rem}
+.allqr{position:fixed;inset:0;z-index:60;background:#fff;overflow:auto;padding:1rem;color:#000}
+.allqrBar{display:flex;gap:.5rem;margin-bottom:.8rem}.allqr h1{font-size:1.2rem;margin:0 0 .8rem}
+.qgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.qcell{border:1px dashed #bbb;border-radius:8px;padding:8px;text-align:center;break-inside:avoid;page-break-inside:avoid}
+.qcell svg{width:100%;height:auto;display:block}.qcell b{display:block;font-size:1rem;margin-top:4px}.qcell small{color:#555}
+@media print{body.allqrOn *{visibility:visible!important}body.allqrOn #editor>*:not(#allqr),body.allqrOn #toast{display:none!important}
+ body.allqrOn #allqr{position:static;padding:0}body.allqrOn .allqrBar{display:none}body.allqrOn .qgrid{grid-template-columns:repeat(4,1fr)}}

@@ -21,7 +21,16 @@
     <label>Property name<input name="property"></label><label>Host name<input name="host"></label>
     <label>Welcome message<textarea name="welcome" rows="3"></textarea></label>
     <label>Address<textarea name="address" rows="2"></textarea></label>
-    <label>Map link for address (optional)<input name="addressMap" placeholder="https://maps.google.com/..."></label></fieldset>
+    <label>Map link for address (optional)<input name="addressMap" placeholder="https://maps.google.com/..."></label>
+    <label>Guide language<select name="lang"><option value="en">English</option><option value="af">Afrikaans</option><option value="zu">isiZulu</option><option value="de">Deutsch (German)</option><option value="fr">Français (French)</option><option value="nl">Nederlands (Dutch)</option><option value="es">Español (Spanish)</option><option value="pt">Português (Portuguese)</option></select></label>
+    <p class="hint">Translates the guide's fixed headings and buttons (Arrival, Wi-Fi, House rules, Call…) for guests. Your own typed text is shown exactly as you wrote it — it is not translated.</p></fieldset>
+   <fieldset><legend><span class="ic" aria-hidden="true">🏢</span>Units</legend>
+    <label class="chk"><input type="checkbox" id="multi"> This property has multiple units (rooms, flats, cottages)</label>
+    <div id="unitsBox" hidden><p class="hint">Everything else in this form is the shared guide. Each unit gets its own link and QR code: the shared guide plus that unit's details below (all optional). A unit's Wi-Fi replaces the shared Wi-Fi.</p>
+     <div class="row"><label>Number of units<input id="unitCount" type="number" min="1" max="500" inputmode="numeric" placeholder="e.g. 12"></label><label>Name prefix<input id="unitPrefix" placeholder="Unit"></label></div>
+     <button type="button" class="add" id="genUnits">Generate units</button>
+     <div id="unitList" class="units"></div>
+     <button type="button" class="primary" id="unitLinksBtn" hidden>Show unit links &amp; QR codes</button></div></fieldset>
    <fieldset><legend><span class="ic" aria-hidden="true">🔑</span>Check-in / Check-out</legend><div class="row">
     <label>Check-in from<input name="checkin" type="time"></label><label>Check-out by<input name="checkout" type="time"></label></div>
     <label>Check-in instructions<textarea name="checkinNotes" rows="3"></textarea></label>
@@ -39,12 +48,16 @@
   <section class="previewWrap"><div class="previewLabel">Live guest preview</div><div class="phone"><div id="preview" class="guide"></div></div></section>
  </main>
  <div id="modal" class="modal" hidden><div class="card">
-  <h2>Guest link ready</h2><p class="hint" id="linkInfo"></p>
+  <h2 id="modalTitle">Guest link ready</h2><p class="hint" id="linkInfo"></p>
   <textarea id="linkOut" rows="4" readonly></textarea>
   <div class="actions"><button id="btnCopy" class="primary">Copy link</button><a id="btnOpen" class="ghost btn" target="_blank">Open</a><button id="btnClose" class="ghost">Close</button></div>
   <div id="qr"></div><p class="hint">Print this QR code and leave it in the unit.</p><div class="actions qrAct"><button id="btnPrint" class="ghost">🖨️ Print QR</button><button id="btnPng" class="ghost">⬇️ Download QR (PNG)</button><button id="btnShare" class="ghost">📤 Share</button></div></div></div>
+<div id="unitsModal" class="modal" hidden><div class="card"><h2>Unit guest links</h2><p class="hint" id="unitsInfo"></p>
+  <div class="actions"><button id="allQrBtn" class="primary">🖨️ Download all QR codes</button><button id="zipBtn" class="ghost">⬇️ ZIP of PNGs</button><button id="unitsClose" class="ghost">Close</button></div>
+  <div id="unitLinks" class="ulinks"></div></div></div>
+ <div id="allqr" class="allqr" hidden><div class="allqrBar"><button id="allqrPrint" class="primary">🖨️ Print / Save as PDF</button><button id="allqrClose" class="ghost">Close</button></div><h1 id="allqrTitle"></h1><div id="allqrGrid" class="qgrid"></div></div>
 </div>
 <div id="guest" class="guide guestPage" hidden></div>
 <div id="toast" class="toast"><span id="toastMsg"></span><button id="toastUndo" hidden>Undo</button></div>
-<script src="lib/lz-string.min.js"></script><script src="lib/qrcode.js"></script><script src="lib/nacl-fast.min.js"></script><script src="config.js"></script><script src="gate.js"></script><script src="app.js"></script>
+<script src="lib/lz-string.min.js"></script><script src="lib/qrcode.js"></script><script src="lib/minizip.js"></script><script src="lib/nacl-fast.min.js"></script><script src="config.js"></script><script src="gate.js"></script><script src="app.js"></script>
 </body></html>
