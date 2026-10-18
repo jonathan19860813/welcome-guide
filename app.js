@@ -1,7 +1,10 @@
 (function(){
 const KEY='wg-v1';
 const LISTS={rules:['text'],howto:['title','note'],recs:['name','type','note','map'],emergency:['label','number'],checklist:['text']};
-const PH={text:'',title:'Appliance (e.g. Geyser)',note:'Note',name:'Name',type:'Type (restaurant, beach…)',map:'Map link (optional)',label:'Label',number:'Number'};
+const LB={rules:{text:'Rule'},howto:{title:'Appliance / topic',note:'How it works'},recs:{name:'Place name',type:'Type',note:'Why you recommend it',map:'Map link (optional)'},emergency:{label:'Who (e.g. Armed response)',number:'Phone number'},checklist:{text:'Checkout task'}};
+const EMERG=['10111','10177','112'];
+const PH0={text:'',title:'Appliance (e.g. Geyser)',note:'Note',name:'Name',type:'Type (restaurant, beach…)',map:'Map link (optional)',label:'Label',number:'Number'};
+const PH={text:'',title:'e.g. Load-shedding & inverter, Gate remote',note:'e.g. Inverter runs lights + Wi-Fi; avoid kettle/oven',name:'e.g. Bientang\'s Cave',type:'e.g. Restaurant, Beach',map:'Paste Google Maps share link',label:'e.g. Armed response',number:'e.g. 021 555 1234'};
 const blank=()=>({property:'',host:'',welcome:'',address:'',addressMap:'',checkin:'14:00',checkout:'10:00',checkinNotes:'',checkoutNotes:'',wifiName:'',wifiPass:'',parking:'',hostPhone:'',hostWhatsapp:'',
  rules:[],howto:[],recs:[],checklist:[],emergency:[{label:'Police (SAPS)',number:'10111'},{label:'Ambulance',number:'10177'},{label:'Emergency from mobile',number:'112'}]});
 const EXAMPLE={property:'Fynbos Rest Guesthouse',host:'Jonathan',welcome:'Welkom! We are so glad you chose Fynbos Rest. Make yourself at home — the kettle is on the counter, rusks are in the tin, and the stoep is the best spot for sundowners. Shout if you need anything.',
@@ -20,7 +23,7 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const tel=n=>String(n).replace(/[^\d+]/g,'');
 const wa=n=>{let d=String(n).replace(/\D/g,'');if(d.startsWith('0'))d='27'+d.slice(1);return d};
 const safeUrl=u=>/^https?:\/\//i.test(u||'')?u:'';
-function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),1600)}
+function toast(m,undo){const t=$('#toast'),u=$('#toastUndo');$('#toastMsg').textContent=m;u.hidden=!undo;u.onclick=()=>{undo();t.classList.remove('on')};t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),undo?5000:1600)}
 async function copy(txt,msg){try{await navigator.clipboard.writeText(txt)}catch(e){const a=document.createElement('textarea');a.value=txt;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove()}toast(msg||'Copied')}
 window.__wgCopy=copy;
 
@@ -36,9 +39,9 @@ function render(d){
  const em=(d.emergency||[]).filter(e=>e.number);let c='';
  if(d.hostPhone)c+=`<div class="contact"><span>Host${d.host?' – '+esc(d.host):''}</span><a class="pill" href="tel:${esc(tel(d.hostPhone))}">📞 Call</a></div>`;
  if(d.hostWhatsapp)c+=`<div class="contact"><span>WhatsApp host</span><a class="pill wa" target="_blank" rel="noopener" href="https://wa.me/${wa(d.hostWhatsapp)}">💬 WhatsApp</a></div>`;
- c+=em.map(e=>`<div class="contact"><span>${esc(e.label)}</span><a class="pill red" href="tel:${esc(tel(e.number))}">📞 ${esc(e.number)}</a></div>`).join('');
+ c+=em.map(e=>`<div class="contact"><span>${esc(e.label)}</span><a class="pill${EMERG.includes(tel(e.number))?' red':''}" href="tel:${esc(tel(e.number))}">📞 ${esc(e.number)}</a></div>`).join('');
  if(c)sec('help','☎️ Contacts & emergencies',`<div class="contacts">${c}</div>`);
- const cl=(d.checklist||[]).filter(x=>x.text);if(cl.length||d.checkoutNotes)sec('out','👋 Checkout',`${d.checkoutNotes?`<p class="pre">${esc(d.checkoutNotes)}</p>`:''}<div class="check">${cl.map(x=>`<label><input type="checkbox"> ${esc(x.text)}</label>`).join('')}</div>`);
+ const cl=(d.checklist||[]).filter(x=>x.text);if(cl.length||d.checkoutNotes)sec('out','👋 Checkout',`${d.checkoutNotes?`<p class="pre">${esc(d.checkoutNotes)}</p>`:''}<div class="check">${cl.map((x,i)=>`<label><input type="checkbox" data-ci="${i}"> ${esc(x.text)}</label>`).join('')}</div>`);
  if(!d.property&&!s.length)return '<div class="empty">Start filling in the form — your guest guide appears here.</div>';
  return `<div class="hero"><small>Welcome to</small><h1>${esc(d.property||'Your stay')}</h1>${d.welcome?`<p>${esc(d.welcome)}</p>`:''}${d.host?`<p style="margin-top:.6rem;opacity:.8">— ${esc(d.host)}, your host</p>`:''}</div><nav class="nav">${nav.join('')}</nav>${s.join('')}<div class="foot">Have a wonderful stay ✨</div>`;
 }
@@ -50,27 +53,43 @@ const h=location.hash;
 if(h.startsWith('#g=')){const g=$('#guest');g.hidden=false;let d=null;
  try{d=JSON.parse(LZString.decompressFromEncodedURIComponent(h.slice(3)))}catch(e){}
  if(!d){g.innerHTML='<div class="empty">This guide link looks incomplete. Please ask your host to resend it.</div>';return}
- document.title=(d.property||'Welcome')+' – Guest guide';g.innerHTML=render(d);wire(g);return}
+ document.title=(d.property||'Welcome')+' – Guest guide';g.innerHTML=render(d);wire(g);
+ let hs=0;for(const ch of h)hs=(hs*31+ch.charCodeAt(0))|0;const TK='wg-ticks-'+hs;
+ let ticks=[];try{ticks=JSON.parse(localStorage.getItem(TK)||'[]')}catch(e){}
+ g.querySelectorAll('[data-ci]').forEach(c=>{c.checked=ticks.includes(+c.dataset.ci);c.onchange=()=>{const t=[...g.querySelectorAll('[data-ci]')].filter(x=>x.checked).map(x=>+x.dataset.ci);localStorage.setItem(TK,JSON.stringify(t))}});
+ const nav=g.querySelector('.nav'),chips=[...g.querySelectorAll('[data-jump]')];let cur='';
+ const spy=()=>{let a=chips[0];for(const c of chips){const el=g.querySelector('#s-'+c.dataset.jump);if(el&&el.getBoundingClientRect().top<120)a=c}
+  if(innerHeight+scrollY>=document.documentElement.scrollHeight-4)a=chips[chips.length-1];
+  if(a&&a.dataset.jump!==cur){cur=a.dataset.jump;chips.forEach(c=>c.classList.toggle('active',c===a));nav.scrollTo({left:a.offsetLeft-nav.clientWidth/2+a.offsetWidth/2,behavior:'smooth'})}};
+ if(nav){addEventListener('scroll',spy,{passive:true});spy()}
+ return}
 
 // editor mode
 $('#editor').hidden=false;const form=$('#form');let data;
 try{data=Object.assign(blank(),JSON.parse(localStorage.getItem(KEY)||'null')||{})}catch(e){data=blank()}
 function buildLists(){document.querySelectorAll('[data-list]').forEach(box=>{const k=box.dataset.list,f=LISTS[k];
- box.innerHTML=(data[k]||[]).map((it,i)=>`<div class="item">${f.map(x=>x==='note'&&k==='howto'?`<textarea rows="2" data-k="${k}" data-i="${i}" data-f="${x}" placeholder="${PH[x]}">${esc(it[x])}</textarea>`:`<input data-k="${k}" data-i="${i}" data-f="${x}" placeholder="${k==='rules'?'e.g. No smoking indoors':k==='checklist'?'e.g. Wash dishes':PH[x]}" value="${esc(it[x])}">`).join('')}<button type="button" class="rm" data-rm="${k}" data-i="${i}" aria-label="Remove">✕</button></div>`).join('')})}
+ box.innerHTML=(data[k]||[]).map((it,i)=>`<div class="item">${f.map(x=>`<label class="f">${LB[k][x]}`+(x==='note'&&k==='howto'?`<textarea rows="2" data-k="${k}" data-i="${i}" data-f="${x}" placeholder="${PH[x]}">${esc(it[x])}</textarea>`:`<input data-k="${k}" data-i="${i}" data-f="${x}" placeholder="${k==='rules'?'e.g. No smoking indoors':k==='checklist'?'e.g. Wash dishes':PH[x]}" value="${esc(it[x])}"${k==='emergency'&&x==='number'?' type="tel"':''}>`)+'</label>').join('')}<button type="button" class="rm" data-rm="${k}" data-i="${i}" aria-label="Remove">✕</button></div>`).join('')})}
 function fill(){form.querySelectorAll('[name]').forEach(el=>el.value=data[el.name]||'');buildLists();update()}
 function update(){localStorage.setItem(KEY,JSON.stringify(data));$('#preview').innerHTML=render(data)}
 wire($('#preview'));
 form.addEventListener('input',e=>{const t=e.target;if(t.name)data[t.name]=t.value;else if(t.dataset.k)data[t.dataset.k][+t.dataset.i][t.dataset.f]=t.value;update()});
 form.addEventListener('click',e=>{const a=e.target.closest('[data-add]'),r=e.target.closest('[data-rm]');
  if(a){const k=a.dataset.add;data[k].push(Object.fromEntries(LISTS[k].map(f=>[f,''])));buildLists();update();const ins=form.querySelectorAll(`[data-k="${k}"]`);ins.length&&ins[ins.length-LISTS[k].length].focus()}
- if(r){data[r.dataset.rm].splice(+r.dataset.i,1);buildLists();update()}});
+ if(r){const k=r.dataset.rm,i=+r.dataset.i,[gone]=data[k].splice(i,1);buildLists();update();toast('Item removed',()=>{data[k].splice(i,0,gone);buildLists();update()})}});
 $('#btnExample').onclick=()=>{if(data.property&&!confirm('Replace your current details with the example?'))return;data=JSON.parse(JSON.stringify(EXAMPLE));fill();toast('Example loaded')};
 $('#btnClear').onclick=()=>{if(!confirm('Clear everything?'))return;data=blank();fill()};
 $('#btnLink').onclick=()=>{const clean=JSON.parse(JSON.stringify(data));for(const k in LISTS)clean[k]=clean[k].filter(o=>Object.values(o).some(v=>v));
  const url=location.href.split('#')[0]+'#g='+LZString.compressToEncodedURIComponent(JSON.stringify(clean));
  $('#linkOut').value=url;$('#btnOpen').href=url;$('#linkInfo').textContent=`Link length: ${url.length} characters. If you change the guide, create a new link.`;
- const q=$('#qr');q.innerHTML='';try{const qr=qrcode(0,'L');qr.addData(url);qr.make();q.innerHTML=qr.createSvgTag({cellSize:4,margin:4,scalable:true})}catch(e){q.innerHTML='<p class="hint">Too much content for a QR code — shorten some text, or share the link directly.</p>'}
+ const q=$('#qr');q.innerHTML='';try{const qr=qrcode(0,'L');qr.addData(url);qr.make();q.innerHTML=qr.createSvgTag({cellSize:4,margin:4,scalable:true});lastQR=qr}catch(e){lastQR=null;q.innerHTML='<p class="hint">Too much content for a QR code — shorten some text, or share the link directly.</p>'}
  $('#modal').hidden=false};
+let lastQR=null;
+$('#btnPrint').onclick=()=>{if(!lastQR)return toast('No QR code to print');window.print()};
+$('#btnPng').onclick=()=>{if(!lastQR)return toast('No QR code to download');const n=lastQR.getModuleCount(),cs=10,m=4,sz=(n+m*2)*cs,c=document.createElement('canvas');c.width=c.height=sz;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,sz,sz);x.fillStyle='#000';
+ for(let r=0;r<n;r++)for(let k=0;k<n;k++)if(lastQR.isDark(r,k))x.fillRect((k+m)*cs,(r+m)*cs,cs,cs);
+ const a=document.createElement('a');a.download=((data.property||'guest-guide').replace(/[^\w-]+/g,'-'))+'-qr.png';a.href=c.toDataURL('image/png');document.body.appendChild(a);a.click();a.remove()};
+$('#tabEdit').onclick=()=>{document.body.classList.remove('showPrev');$('#tabEdit').classList.add('on');$('#tabPrev').classList.remove('on');scrollTo(0,0)};
+$('#tabPrev').onclick=()=>{document.body.classList.add('showPrev');$('#tabPrev').classList.add('on');$('#tabEdit').classList.remove('on');scrollTo(0,0)};
 $('#btnCopy').onclick=()=>copy($('#linkOut').value,'Link copied');$('#btnClose').onclick=()=>$('#modal').hidden=true;
 window.addEventListener('hashchange',()=>location.reload());
 fill();

@@ -37,3 +37,29 @@ ul.clean{padding-left:1.1rem;margin:0}ul.clean li{margin:.25rem 0}.how{border-le
 .foot{text-align:center;color:#999;font-size:.75rem;padding:1.5rem}.empty{color:#999;text-align:center;padding:3rem 1rem}
 legend+*,fieldset>.row{clear:both}
 fieldset{min-width:0}.wrap>*{min-width:0}
+/* v1.1 QA fixes */
+.sec{scroll-margin-top:74px}
+button,.btn{min-height:44px}
+.pill{min-height:44px;padding:.5em 1em}
+.nav a{min-height:44px;display:inline-flex;align-items:center;font-size:.85rem}.nav a.active{background:#0f766e;color:#fff}
+.check label{min-height:44px}.check input{width:24px;height:24px;flex:none;accent-color:#0f766e}
+.item .rm{min-width:44px;min-height:44px;margin-left:.75rem}
+.item .f{flex:1 1 140px;margin:0;font-size:.8rem}.item .f input,.item .f textarea{margin-top:.15rem}
+.tag{font-size:12px}.hero small{font-size:13px}.hint{font-size:13px}
+.intro{background:#ecfdf5;border:1px solid #a7f3d0;border-radius:14px;padding:.9rem 1rem;margin-bottom:1rem;font-size:14px}.intro ol{margin:.4rem 0;padding-left:1.2rem}.intro p{margin:.4rem 0}
+.seg{display:none}
+.toast{display:flex;gap:.8rem;align-items:center}.toast.on{pointer-events:auto}#toastUndo{background:#14b8a6;color:#fff;min-height:36px;padding:.2em .9em}
+.qrAct{justify-content:center;margin-top:.5rem}
+@media(max-width:900px){
+ .top{position:static;flex-wrap:nowrap;padding:.5rem .8rem}.top h1{font-size:1rem}
+ .top .actions{flex-wrap:nowrap}
+ #btnLink{position:fixed;left:.8rem;right:.8rem;bottom:.8rem;z-index:15;box-shadow:0 4px 14px #0004;font-size:1.05rem}
+ body{padding-bottom:80px}.toast{bottom:84px}
+ .seg{display:flex;position:sticky;top:0;z-index:6;background:#fff;padding:.4rem .8rem;gap:.4rem;box-shadow:0 1px 4px #0001}
+ .seg button{flex:1;background:#f0fdfa;color:#0f766e}.seg button.on{background:#0f766e;color:#fff}
+ .top{flex-wrap:wrap}
+ .previewWrap{display:none}.showPrev .previewWrap{display:block}.showPrev #form{display:none}
+ .phone{border:0;border-radius:0;height:auto}.previewLabel{display:none}.wrap{padding:.6rem}
+}
+@media print{body *{visibility:hidden}#modal,#modal #qr,#modal #qr *,#printTitle{visibility:visible}#modal{position:absolute;inset:0;background:#fff}#modal #qr{position:absolute;top:2cm;left:0;right:0}#modal #qr svg{width:10cm;height:10cm}}
+input,textarea{min-height:44px}
