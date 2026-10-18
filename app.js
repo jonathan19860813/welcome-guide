@@ -34,11 +34,12 @@ for(const k in (window.WG_TX||{})){const v=WG_TX[k].split('|');I18N[k]=Object.fr
 const isRTL=l=>!!(window.WG_META&&WG_META[l]&&WG_META[l][3]);const htmlLang=l=>(window.WG_HTMLLANG||{})[l]||l;
 const UF=['num','name','bldg','note','wifiName','wifiPass','code','extra'];
 // Build the guest-facing guide object: shared guide (cleaned) merged with one unit's details.
-function ulabel(u){if(!u)return '';const a=[u.num?'Unit '+u.num:'',u.name].filter(Boolean).join(' · ');return [u.bldg,a].filter(Boolean).join(' – ')}
+const utxt=u=>{const n=(u.name||'').trim();return [u.num?'Unit '+u.num:'',/^\d+[a-zA-Z]?$/.test(n)?'Unit '+n:n].filter(Boolean).join(' · ')};
+function ulabel(u){if(!u)return '';return [u.bldg,utxt(u)].filter(Boolean).join(' – ')}
 function guestData(data,u){const c=JSON.parse(JSON.stringify(data));delete c.multi;delete c.units;delete c.unitPrefix;delete c.unitCount;
  for(const k in LISTS)c[k]=(c[k]||[]).filter(o=>Object.values(o).some(v=>v));
  if(!c.lang||c.lang==='en'||!I18N[c.lang])delete c.lang;
- if(u){c.unit=[u.num?'Unit '+u.num:'',u.name].filter(Boolean).join(' · ');if(u.bldg)c.building=u.bldg;if(u.note)c.unitNote=u.note;if(u.code)c.code=u.code;if(u.extra)c.unitExtra=u.extra;if(u.wifiName)c.wifiName=u.wifiName;if(u.wifiPass||u.wifiName)c.wifiPass=u.wifiPass||''}
+ if(u){c.unit=utxt(u);if(u.bldg)c.building=u.bldg;if(u.note)c.unitNote=u.note;if(u.code)c.code=u.code;if(u.extra)c.unitExtra=u.extra;if(u.wifiName)c.wifiName=u.wifiName;if(u.wifiPass||u.wifiName)c.wifiPass=u.wifiPass||''}
  for(const k in c)if(c[k]===''||(Array.isArray(c[k])&&!c[k].length&&k!=='emergency'))delete c[k];
  return c}
 const linkFor=(gd)=>location.href.split('#')[0]+'#g='+LZString.compressToEncodedURIComponent(JSON.stringify(gd));
@@ -96,19 +97,18 @@ $('#editor').hidden=false;if(window.WG_META&&window.WG_REGIONS){const sel=docume
 try{data=Object.assign(blank(),JSON.parse(localStorage.getItem(KEY)||'null')||{})}catch(e){data=blank()}
 function buildLists(){document.querySelectorAll('[data-list]').forEach(box=>{const k=box.dataset.list,f=LISTS[k];
  box.innerHTML=(data[k]||[]).map((it,i)=>`<div class="item">${f.map(x=>`<label class="f">${LB[k][x]}`+(x==='note'&&k==='howto'?`<textarea rows="2" data-k="${k}" data-i="${i}" data-f="${x}" placeholder="${PH[x]}">${esc(it[x])}</textarea>`:`<input data-k="${k}" data-i="${i}" data-f="${x}" placeholder="${k==='rules'?'e.g. No smoking indoors':k==='checklist'?'e.g. Wash dishes':PH[x]}" value="${esc(it[x])}"${k==='emergency'&&x==='number'?' type="tel"':''}>`)+'</label>').join('')}<button type="button" class="rm" data-rm="${k}" data-i="${i}" aria-label="Remove">✕</button></div>`).join('')})}
-function norm(){if(!Array.isArray(data.units))data.units=[];data.units=data.units.map(u=>Object.assign({num:'',name:'',bldg:'',note:'',wifiName:'',wifiPass:'',code:'',extra:''},u));if(!I18N[data.lang]){const sl=localStorage.getItem('wg-lang');data.lang=I18N[sl]?sl:'en'}if(data.unitPrefix==null)data.unitPrefix='Unit'}
-function buildUnits(){$('#multi').checked=!!data.multi;$('#unitsBox').hidden=!data.multi;$('#unitCount').value=data.unitCount||'';$('#unitPrefix').value=data.unitPrefix||'';
- $('#unitList').innerHTML=data.units.map((u,i)=>`<div class="unit"><div class="uhead"><b class="ulab">${esc(ulabel(u)||'Unit '+(i+1))}</b><button type="button" class="rm" data-urm="${i}" aria-label="Remove unit">✕</button></div>
- <div class="row3"><label>Unit number<input data-u="${i}" data-f="num" value="${esc(u.num)}" placeholder="e.g. 12" inputmode="text"></label><label>Unit name<input data-u="${i}" data-f="name" value="${esc(u.name)}" placeholder="e.g. Sea View"></label><label>Building / property<input data-u="${i}" data-f="bldg" value="${esc(u.bldg)}" placeholder="e.g. Block A" list="bldgList"></label></div>
- <details><summary class="hint">${u.note||u.wifiName||u.code||u.extra?'✎ More details (has details)':'More details (optional) ▾'}</summary>
- <label>Unit note<textarea rows="2" data-u="${i}" data-f="note" placeholder="e.g. Ground floor, sea-facing">${esc(u.note)}</textarea></label>
- <div class="row"><label>Wi-Fi name (override)<input data-u="${i}" data-f="wifiName" value="${esc(u.wifiName)}" placeholder="Leave blank to use shared"></label><label>Wi-Fi password (override)<input data-u="${i}" data-f="wifiPass" value="${esc(u.wifiPass)}"></label></div>
- <label>Door / lockbox code<input data-u="${i}" data-f="code" value="${esc(u.code)}"></label>
- <label>Extra note<textarea rows="2" data-u="${i}" data-f="extra">${esc(u.extra)}</textarea></label></details></div>`).join('');$('#bldgList').innerHTML=[...new Set(data.units.map(u=>u.bldg).filter(Boolean))].map(b=>`<option value="${esc(b)}">`).join('');$('#unitLinksBtn').hidden=!data.units.length}
+function norm(){if(!Array.isArray(data.units))data.units=[];data.units=data.units.map(u=>Object.assign({num:'',name:'',bldg:'',note:'',wifiName:'',wifiPass:'',code:'',extra:''},u));if(!I18N[data.lang]){const sl=localStorage.getItem('wg-lang');data.lang=I18N[sl]?sl:'en'}if(!data.curB&&!data.curU&&data.units.length){const u=data.units[0];data.curB=u.bldg||'';data.curU=ukey(u)}}
+const UD=['note','wifiName','wifiPass','code','extra'],ukey=u=>u.num&&u.name?u.num+' · '+u.name:(u.name||u.num||''),same=(a,b)=>(a||'').trim().toLowerCase()===(b||'').trim().toLowerCase();
+function curUnit(make){const B=(data.curB||'').trim(),U=(data.curU||'').trim();if(!U&&!B)return null;let u=data.units.find(x=>same(x.bldg,B)&&same(ukey(x),U));
+ if(!u&&make){u={num:'',name:U,bldg:B,note:'',wifiName:'',wifiPass:'',code:'',extra:''};data.units.push(u)}return u||null}
+function buildUnits(){$('#multi').checked=!!data.multi;$('#unitsBox').hidden=!data.multi;$('#uBldg').value=data.curB||'';$('#uWhich').value=data.curU||'';
+ $('#bldgList').innerHTML=[...new Set(data.units.map(u=>u.bldg).filter(Boolean))].map(b=>`<option value="${esc(b)}">`).join('');
+ const B=(data.curB||'').trim(),us=data.units.filter(u=>!B||same(u.bldg,B));$('#unitUsed').innerHTML=[...new Set(us.map(ukey).filter(Boolean))].map(k=>`<option value="${esc(k)}">`).join('');
+ const u=curUnit(false);UD.forEach(f=>$('#ud-'+f).value=u?u[f]||'':'');$('#uLabel').textContent=u||data.curU||data.curB?'Link label: '+(ulabel(u||{bldg:data.curB,name:data.curU})||'—'):''}
 function fill(){norm();form.querySelectorAll('[name]').forEach(el=>el.value=data[el.name]||'');buildLists();buildUnits();update()}
-function update(){localStorage.setItem(KEY,JSON.stringify(data));const pv=$('#preview');pv.lang=htmlLang(data.lang||'en');pv.dir=isRTL(data.lang)?'rtl':'ltr';pv.innerHTML=render(guestData(data,data.multi&&data.units[0]?data.units[0]:null))}
+function update(){localStorage.setItem(KEY,JSON.stringify(data));const pv=$('#preview');pv.lang=htmlLang(data.lang||'en');pv.dir=isRTL(data.lang)?'rtl':'ltr';pv.innerHTML=render(guestData(data,data.multi?(curUnit(false)||((data.curB||data.curU)?{bldg:data.curB,name:data.curU}:null)):null))}
 wire($('#preview'));
-form.addEventListener('input',e=>{const t=e.target;if(t.id==='multi'){data.multi=t.checked;buildUnits()}else if(t.id==='unitPrefix'){data.unitPrefix=t.value}else if(t.id==='unitCount'){data.unitCount=t.value;return}else if(t.dataset.u){const u=data.units[+t.dataset.u];u[t.dataset.f]=t.value;const l=t.closest('.unit').querySelector('.ulab');l.textContent=ulabel(u)||'Unit '+(+t.dataset.u+1)}else if(t.name){data[t.name]=t.value;if(t.name==='lang')localStorage.setItem('wg-lang',t.value)}else if(t.dataset.k)data[t.dataset.k][+t.dataset.i][t.dataset.f]=t.value;update()});
+form.addEventListener('input',e=>{const t=e.target;if(t.id==='multi'){data.multi=t.checked;buildUnits()}else if(t.id==='uBldg'||t.id==='uWhich'){data[t.id==='uBldg'?'curB':'curU']=t.value;const u=curUnit(false);UD.forEach(f=>$('#ud-'+f).value=u?u[f]||'':'');$('#uLabel').textContent='Link label: '+(ulabel(u||{bldg:data.curB,name:data.curU})||'—')}else if(t.dataset.ud){const u=curUnit(true);if(u)u[t.dataset.ud]=t.value;else return toast('Enter a building or unit first')}else if(t.name){data[t.name]=t.value;if(t.name==='lang')localStorage.setItem('wg-lang',t.value)}else if(t.dataset.k)data[t.dataset.k][+t.dataset.i][t.dataset.f]=t.value;update()});
 form.addEventListener('click',e=>{const a=e.target.closest('[data-add]'),r=e.target.closest('[data-rm]');
  if(a){const k=a.dataset.add;data[k].push(Object.fromEntries(LISTS[k].map(f=>[f,''])));buildLists();update();const ins=form.querySelectorAll(`[data-k="${k}"]`);ins.length&&ins[ins.length-LISTS[k].length].focus()}
  if(r){const k=r.dataset.rm,i=+r.dataset.i,[gone]=data[k].splice(i,1);buildLists();update();toast('Item removed',()=>{data[k].splice(i,0,gone);buildLists();update()})}});
@@ -120,39 +120,8 @@ function showLink(url,name){curName=name||'';$('#modalTitle').textContent=name?'
  $('#linkOut').value=url;$('#btnOpen').href=url;$('#linkInfo').textContent=`Link length: ${url.length} characters. If you change the guide, create a new link.`;
  const q=$('#qr');q.innerHTML='';lastQR=makeQR(url);if(lastQR)q.innerHTML=lastQR.createSvgTag({cellSize:4,margin:4,scalable:true});else q.innerHTML='<p class="hint">Too much content for a QR code — shorten some text, or share the link directly.</p>';
  $('#modal').hidden=false}
-let unitLinks=[];
-function computeUnitLinks(){unitLinks=data.units.map((u,i)=>({i,name:ulabel(u)||('Unit '+(i+1)),url:linkFor(guestData(data,u))}));return unitLinks}
-function showUnits(){computeUnitLinks();const max=Math.max(0,...unitLinks.map(x=>x.url.length));
- $('#unitsInfo').textContent=`${unitLinks.length} units · longest link ${max} characters. Each link holds the shared guide plus that unit's details.`;
- $('#unitLinks').innerHTML=unitLinks.map((x,i)=>`<div class="ulink"><b>${esc(x.name)}</b><span class="hint">${x.url.length} chars</span><div class="actions"><button class="ghost" data-ucopy="${i}">Copy</button><button class="ghost" data-ushare="${i}">📤 Share</button><button class="ghost" data-uqr="${i}">QR</button><a class="ghost btn" target="_blank" href="${esc(x.url)}">Open</a><button class="ghost rmu" data-urm="${i}" aria-label="Remove unit">✕</button></div></div>`).join('');
- $('#unitsModal').hidden=false}
-$('#btnLink').onclick=()=>{if(data.multi&&data.units.length)return showUnits();showLink(linkFor(guestData(data,null)))};
-$('#unitLinksBtn').onclick=showUnits;
-const newUnit=()=>({num:'',name:'',bldg:'',note:'',wifiName:'',wifiPass:'',code:'',extra:''});
-function addUnits(n){data.units.push(...Array.from({length:n},newUnit));buildUnits();update();const r=$('#unitList').querySelectorAll('.unit');r[r.length-n]&&r[r.length-n].querySelector('input').focus()}
-$('#addUnit').onclick=()=>addUnits(1);$('#add5Units').onclick=()=>addUnits(5);
-function rmUnit(i){const [gone]=data.units.splice(i,1);if(!gone)return;buildUnits();update();if(!$('#unitsModal').hidden)showUnits();
- toast('Unit removed',()=>{data.units.splice(i,0,gone);buildUnits();update();if(!$('#unitsModal').hidden)showUnits()})}
-$('#unitList').addEventListener('click',e=>{const b=e.target.closest('[data-urm]');if(b)rmUnit(+b.dataset.urm)});
-$('#genUnits').onclick=()=>{const n=Math.floor(+$('#unitCount').value);if(!(n>=1&&n<=500))return toast('Enter a unit count from 1 to 500');
- const pre=($('#unitPrefix').value||'').trim();data.unitPrefix=pre;
- if(n>50&&!confirm(`Add ${n} units?`))return;
- const nums=data.units.map(u=>parseInt(u.num,10)).filter(x=>x>0),start=(nums.length?Math.max(...nums):0)+1;
- for(let k=start;k<start+n;k++)data.units.push(Object.assign(newUnit(),{num:String(k),name:pre&&pre.toLowerCase()!=='unit'?pre+' '+k:''}));
- buildUnits();update();toast(n+' units added ('+data.units.length+' total)')};
-$('#unitLinks').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.urm!=null)return rmUnit(+b.dataset.urm);const i=+(b.dataset.ucopy??b.dataset.ushare??b.dataset.uqr),x=unitLinks[i];if(!x)return;
- if(b.dataset.ucopy!=null)copy(x.url,'Link copied');else if(b.dataset.ushare!=null){lastQR=makeQR(x.url);shareLink(x.url,x.name)}else{$('#unitsModal').hidden=true;showLink(x.url,x.name)}};
-$('#unitsClose').onclick=()=>$('#unitsModal').hidden=true;
-function buildAllQR(){computeUnitLinks();const prop=esc(data.property||'');
- $('#allqrGrid').innerHTML=unitLinks.map(x=>{const q=makeQR(x.url);return `<div class="qcell">${q?q.createSvgTag({cellSize:3,margin:2,scalable:true}):'<p class="hint">Too long for QR</p>'}<b>${esc(x.name)}</b><small>${prop}</small></div>`}).join('');
- $('#allqrTitle').textContent=(data.property||'Guest guide')+' – unit QR codes';}
-$('#allQrBtn').onclick=()=>{buildAllQR();$('#unitsModal').hidden=true;$('#allqr').hidden=false;document.body.classList.add('allqrOn');scrollTo(0,0)};
-$('#allqrClose').onclick=()=>{$('#allqr').hidden=true;document.body.classList.remove('allqrOn')};
-$('#allqrPrint').onclick=()=>window.print();
-$('#zipBtn').onclick=async()=>{computeUnitLinks();const files=[];const used={};
- for(const x of unitLinks){const q=makeQR(x.url);if(!q)continue;const blob=await new Promise(r=>qrCanvas(q,x.name).toBlob(r,'image/png'));
-  let fn=(x.name.replace(/[^\w-]+/g,'-')||'unit');while(used[fn])fn+='_';used[fn]=1;files.push({name:fn+'.png',data:new Uint8Array(await blob.arrayBuffer())})}
- const z=MiniZip.make(files),a=document.createElement('a');a.download=((data.property||'guest-guide').replace(/[^\w-]+/g,'-'))+'-unit-qr-codes.zip';a.href=URL.createObjectURL(z);document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);toast(files.length+' QR codes zipped')};
+$('#btnLink').onclick=()=>{if(data.multi){const u=curUnit(!!(data.curU||data.curB));if(u){buildUnits();return showLink(linkFor(guestData(data,u)),ulabel(u))}}showLink(linkFor(guestData(data,null)))};
+form.addEventListener('change',e=>{if(e.target.id==='uBldg'||e.target.id==='uWhich'){if(e.target.id==='uWhich'&&(data.curU||'').trim()&&curUnit(true))update();buildUnits()}});
 $('#btnPrint').onclick=()=>{if(!lastQR)return toast('No QR code to print');document.body.classList.remove('allqrOn');window.print()};
 function qrCanvas(qr,label){qr=qr||lastQR;const n=qr.getModuleCount(),cs=10,m=4,sz=(n+m*2)*cs,lh=label?60:0,c=document.createElement('canvas');c.width=sz;c.height=sz+lh;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,sz,sz+lh);x.fillStyle='#000';
  for(let r=0;r<n;r++)for(let k=0;k<n;k++)if(qr.isDark(r,k))x.fillRect((k+m)*cs,(r+m)*cs,cs,cs);

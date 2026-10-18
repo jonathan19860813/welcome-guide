@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="theme-color" content="#0f4c47"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Welcome Guide</title><link rel="stylesheet" href="style.css?v=4c"></head><body>
+<title>Welcome Guide</title><link rel="stylesheet" href="style.css?v=5"></head><body>
 <div id="lock" class="lock" hidden><form id="lockForm" class="lockCard" novalidate>
  <span class="logo big" aria-hidden="true">W</span><h1>Unlock the Welcome Guide Builder</h1>
  <p>Paste the key from your purchase email. You only need to do this once on each phone or computer.</p>
@@ -27,13 +27,15 @@
     <label>Map link for address (optional)<input name="addressMap" placeholder="https://maps.google.com/..."></label></fieldset>
    <fieldset><legend><span class="ic" aria-hidden="true">🏢</span>Units</legend>
     <label class="chk"><input type="checkbox" id="multi"> This property has multiple units (rooms, flats, cottages)</label>
-    <div id="unitsBox" hidden><p class="hint">Everything else in this form is the shared guide. Each unit gets its own link and QR code: the shared guide plus that unit's details below (all optional). A unit's Wi-Fi replaces the shared Wi-Fi.</p>
-     <div id="unitList" class="units"></div><datalist id="bldgList"></datalist>
-     <div class="actions"><button type="button" class="add" id="addUnit">+ Add unit</button><button type="button" class="add ghost" id="add5Units">+ Add 5 units</button></div>
-     <details class="bulk"><summary>Bulk add (optional)</summary><p class="hint">Appends numbered units after your existing ones. Nothing is removed.</p>
-     <div class="row"><label>How many<input id="unitCount" type="number" min="1" max="500" inputmode="numeric" placeholder="e.g. 12"></label><label>Name prefix (optional)<input id="unitPrefix" placeholder="Unit"></label></div>
-     <button type="button" class="add" id="genUnits">Add units</button></details>
-     <button type="button" class="primary" id="unitLinksBtn" hidden>Show unit links &amp; QR codes</button></div></fieldset>
+    <div id="unitsBox" hidden><p class="hint">Everything else in this form is the shared guide. Pick the building and unit, then tap <b>Create guest link</b> for that unit. Details are saved per building + unit and come back when you switch to it again.</p>
+     <label>Dorm / building name<input id="uBldg" list="bldgList" placeholder="e.g. Block A" autocomplete="off"></label><datalist id="bldgList"></datalist>
+     <label>Which unit<input id="uWhich" list="unitUsed" placeholder="e.g. 12 or Sea View" autocomplete="off"></label><datalist id="unitUsed"></datalist>
+     <p class="hint" id="uLabel"></p>
+     <details class="udetails"><summary>More details (optional)</summary>
+      <label>Unit note<textarea rows="2" id="ud-note" data-ud="note" placeholder="e.g. Ground floor, sea-facing"></textarea></label>
+      <div class="row"><label>Wi-Fi name (override)<input id="ud-wifiName" data-ud="wifiName" placeholder="Leave blank to use shared"></label><label>Wi-Fi password (override)<input id="ud-wifiPass" data-ud="wifiPass"></label></div>
+      <label>Door / lockbox code<input id="ud-code" data-ud="code"></label>
+      <label>Extra note<textarea rows="2" id="ud-extra" data-ud="extra"></textarea></label></details></div></fieldset>
    <fieldset><legend><span class="ic" aria-hidden="true">🔑</span>Check-in / Check-out</legend><div class="row">
     <label>Check-in from<input name="checkin" type="time"></label><label>Check-out by<input name="checkout" type="time"></label></div>
     <label>Check-in instructions<textarea name="checkinNotes" rows="3"></textarea></label>
@@ -55,12 +57,9 @@
   <textarea id="linkOut" rows="4" readonly></textarea>
   <div class="actions"><button id="btnCopy" class="primary">Copy link</button><a id="btnOpen" class="ghost btn" target="_blank">Open</a><button id="btnClose" class="ghost">Close</button></div>
   <div id="qr"></div><p class="hint">Print this QR code and leave it in the unit.</p><div class="actions qrAct"><button id="btnPrint" class="ghost">🖨️ Print QR</button><button id="btnPng" class="ghost">⬇️ Download QR (PNG)</button><button id="btnShare" class="ghost">📤 Share</button></div></div></div>
-<div id="unitsModal" class="modal" hidden><div class="card"><h2>Unit guest links</h2><p class="hint" id="unitsInfo"></p>
-  <div class="actions"><button id="allQrBtn" class="primary">🖨️ Download all QR codes</button><button id="zipBtn" class="ghost">⬇️ ZIP of PNGs</button><button id="unitsClose" class="ghost">Close</button></div>
-  <div id="unitLinks" class="ulinks"></div></div></div>
- <div id="allqr" class="allqr" hidden><div class="allqrBar"><button id="allqrPrint" class="primary">🖨️ Print / Save as PDF</button><button id="allqrClose" class="ghost">Close</button></div><h1 id="allqrTitle"></h1><div id="allqrGrid" class="qgrid"></div></div>
+
 </div>
 <div id="guest" class="guide guestPage" hidden></div>
 <div id="toast" class="toast"><span id="toastMsg"></span><button id="toastUndo" hidden>Undo</button></div>
-<script src="lib/lz-string.min.js"></script><script src="lib/qrcode.js"></script><script src="lib/minizip.js"></script><script src="lib/nacl-fast.min.js"></script><script src="config.js?v=4c"></script><script src="gate.js?v=4c"></script><script src="langs.js?v=4c"></script><script src="app.js?v=4c"></script>
+<script src="lib/lz-string.min.js"></script><script src="lib/qrcode.js"></script><script src="lib/nacl-fast.min.js"></script><script src="config.js?v=5"></script><script src="gate.js?v=5"></script><script src="langs.js?v=5"></script><script src="app.js?v=5"></script>
 </body></html>
