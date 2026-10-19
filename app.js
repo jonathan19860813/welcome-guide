@@ -1,5 +1,5 @@
 // Version check: an old cached index.html loading this newer app.js reloads once with a cache-busting URL.
-const WG_VERSION='10';
+const WG_VERSION='11';
 (function(){try{const m=document.querySelector('meta[name=wg-version]');if(m&&m.content===WG_VERSION)return;
  if(sessionStorage.getItem('wg-reloaded')===WG_VERSION)return;sessionStorage.setItem('wg-reloaded',WG_VERSION);
  const u=new URL(location.href);u.searchParams.set('r',WG_VERSION+'-'+Date.now());location.replace(u.toString());throw new Error('wg: reloading for new version')}catch(e){if(String(e.message).startsWith('wg:'))throw e}})();
