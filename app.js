@@ -1,5 +1,5 @@
 // Version check: an old cached index.html loading this newer app.js reloads once with a cache-busting URL.
-const WG_VERSION='6';
+const WG_VERSION='7';
 (function(){try{const m=document.querySelector('meta[name=wg-version]');if(m&&m.content===WG_VERSION)return;
  if(sessionStorage.getItem('wg-reloaded')===WG_VERSION)return;sessionStorage.setItem('wg-reloaded',WG_VERSION);
  const u=new URL(location.href);u.searchParams.set('r',WG_VERSION+'-'+Date.now());location.replace(u.toString());throw new Error('wg: reloading for new version')}catch(e){if(String(e.message).startsWith('wg:'))throw e}})();
@@ -36,15 +36,18 @@ pt:{welcome:'Bem-vindo a',arrive:'Chegada',cin:'Check-in',cout:'Check-out',wifi:
 const LANGS=Object.keys(I18N);
 // pt (Portugal) existing; extra languages from langs.js
 for(const k in (window.WG_TX||{})){const v=WG_TX[k].split('|');I18N[k]=Object.fromEntries(WG_KEYS.map((x,j)=>[x,v[j]||I18N.en[x]]))}
+for(const k in (window.WG_TX2||{}))if(I18N[k]){const v=WG_TX2[k].split('|');I18N[k].stay=v[0];I18N[k].unitWord=v[1];I18N[k].guide=v[2]}
+for(const k in I18N)for(const x in I18N.en)if(I18N[k][x]==null)I18N[k][x]=I18N.en[x]||'';
+window.WG_I18N=I18N;
 const isRTL=l=>!!(window.WG_META&&WG_META[l]&&WG_META[l][3]);const htmlLang=l=>(window.WG_HTMLLANG||{})[l]||l;
 const UF=['num','name','bldg','note','wifiName','wifiPass','code','extra'];
 // Build the guest-facing guide object: shared guide (cleaned) merged with one unit's details.
-const utxt=u=>{const n=(u.name||'').trim();return [u.num?'Unit '+u.num:'',/^\d+[a-zA-Z]?$/.test(n)?'Unit '+n:n].filter(Boolean).join(' · ')};
+const utxt=(u,w)=>{w=w||'Unit';const n=(u.name||'').trim();return [u.num?w+' '+u.num:'',/^\d+[a-zA-Z]?$/.test(n)?w+' '+n:n].filter(Boolean).join(' · ')};
 function ulabel(u){if(!u)return '';return [u.bldg,utxt(u)].filter(Boolean).join(' – ')}
 function guestData(data,u){const c=JSON.parse(JSON.stringify(data));delete c.multi;delete c.units;delete c.unitPrefix;delete c.unitCount;
  for(const k in LISTS)c[k]=(c[k]||[]).filter(o=>Object.values(o).some(v=>v));
  if(!c.lang||c.lang==='en'||!I18N[c.lang])delete c.lang;
- if(u){c.unit=utxt(u);if(u.bldg)c.building=u.bldg;if(u.note)c.unitNote=u.note;if(u.code)c.code=u.code;if(u.extra)c.unitExtra=u.extra;if(u.wifiName)c.wifiName=u.wifiName;if(u.wifiPass||u.wifiName)c.wifiPass=u.wifiPass||''}
+ if(u){c.unit=utxt(u,(I18N[data.lang]||I18N.en).unitWord);if(u.bldg)c.building=u.bldg;if(u.note)c.unitNote=u.note;if(u.code)c.code=u.code;if(u.extra)c.unitExtra=u.extra;if(u.wifiName)c.wifiName=u.wifiName;if(u.wifiPass||u.wifiName)c.wifiPass=u.wifiPass||''}
  for(const k in c)if(c[k]===''||(Array.isArray(c[k])&&!c[k].length&&k!=='emergency'))delete c[k];
  return c}
 const linkFor=(gd)=>location.href.split('#')[0]+'#g='+LZString.compressToEncodedURIComponent(JSON.stringify(gd));
@@ -74,7 +77,7 @@ function render(d){const T=I18N[d.lang]||I18N.en;
  if(c)sec('help','☎️ '+esc(T.help),`<div class="contacts">${c}</div>`);
  const cl=(d.checklist||[]).filter(x=>x.text);if(cl.length||d.checkoutNotes)sec('out','👋 '+T.out,`${d.checkoutNotes?`<p class="pre">${esc(d.checkoutNotes)}</p>`:''}<div class="check">${cl.map((x,i)=>`<label><input type="checkbox" data-ci="${i}"> ${esc(x.text)}</label>`).join('')}</div>`);
  if(!d.property&&!s.length)return '<div class="empty">Start filling in the form — your guest guide appears here.</div>';
- return `<div class="hero"><small>${T.welcome}</small><h1>${esc(d.property||'Your stay')}</h1>${d.building?`<p class="bldgName">${esc(d.building)}</p>`:''}${d.unit?`<p class="unitName">${esc(d.unit)}</p>`:''}${d.welcome?`<p>${esc(d.welcome)}</p>`:''}${d.host?`<p style="margin-top:.6rem;opacity:.8">— ${esc(d.host)}, ${T.yourHost}</p>`:''}</div><nav class="nav">${nav.join('')}</nav>${s.join('')}<div class="foot">${T.bye} ✨</div>`;
+ return `<div class="hero"><small>${T.welcome}</small><h1>${esc(d.property||T.stay)}</h1>${d.building?`<p class="bldgName">${esc(d.building)}</p>`:''}${d.unit?`<p class="unitName">${esc(d.unit)}</p>`:''}${d.welcome?`<p>${esc(d.welcome)}</p>`:''}${d.host?`<p style="margin-top:.6rem;opacity:.8">— ${esc(d.host)}, ${T.yourHost}</p>`:''}</div><nav class="nav">${nav.join('')}</nav>${s.join('')}<div class="foot">${T.bye} ✨</div>`;
 }
 function wire(root){root.addEventListener('click',e=>{const c=e.target.closest('[data-copy]');if(c){copy(c.dataset.copy,c.dataset.msg||'Copied');return}
  const j=e.target.closest('[data-jump]');if(j){e.preventDefault();const el=root.querySelector('#s-'+j.dataset.jump);el&&el.scrollIntoView({behavior:'smooth',block:'start'})}})}
@@ -84,7 +87,7 @@ const h=location.hash;
 if(h.startsWith('#g=')){const g=$('#guest');g.hidden=false;let d=null;
  try{d=JSON.parse(LZString.decompressFromEncodedURIComponent(h.slice(3)))}catch(e){}
  if(!d){g.innerHTML='<div class="empty">This guide link looks incomplete. Please ask your host to resend it.</div>';return}
- document.documentElement.lang=I18N[d.lang]?htmlLang(d.lang):'en';if(isRTL(d.lang)){g.dir='rtl';document.documentElement.dir='rtl'}document.title=(d.property||'Welcome')+(d.building?' · '+d.building:'')+(d.unit?' · '+d.unit:'')+' – Guest guide';g.innerHTML=render(d);wire(g);
+ document.documentElement.lang=I18N[d.lang]?htmlLang(d.lang):'en';if(isRTL(d.lang)){g.dir='rtl';document.documentElement.dir='rtl'}document.title=(d.property||'Welcome')+(d.building?' · '+d.building:'')+(d.unit?' · '+d.unit:'')+' – '+(I18N[d.lang]||I18N.en).guide;g.innerHTML=render(d);wire(g);
  let hs=0;for(const ch of h)hs=(hs*31+ch.charCodeAt(0))|0;const TK='wg-ticks-'+hs;
  let ticks=[];try{ticks=JSON.parse(localStorage.getItem(TK)||'[]')}catch(e){}
  g.querySelectorAll('[data-ci]').forEach(c=>{c.checked=ticks.includes(+c.dataset.ci);c.onchange=()=>{const t=[...g.querySelectorAll('[data-ci]')].filter(x=>x.checked).map(x=>+x.dataset.ci);localStorage.setItem(TK,JSON.stringify(t))}});
