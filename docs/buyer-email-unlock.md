@@ -7,7 +7,7 @@ No key to copy and paste. You only need the email address you use for your purch
 1. Type your email address and tap **Email me a code**.
    - **Bought on Etsy? The first time,** also tap *"Add your order number"* and type your Etsy order number.
      You'll find it in the Etsy app or website under **Purchases**, or in your Etsy order confirmation email.
-2. Check your inbox for an email with a **6-digit code**. If you can't see it within a couple of minutes, look in your spam or promotions folder.
+2. Check your inbox for an email with a **6-digit code**. It comes from **Welcome Guide**. If you can't see it within a couple of minutes, check the **Updates** or **Promotions** tab in Gmail, and your spam folder.
 3. Type the code on the page. The builder opens, unlocked and ready to use.
 
 **Good to know**

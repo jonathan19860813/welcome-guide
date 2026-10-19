@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0f4c47">
-<meta name="robots" content="noindex"><title>Unlock with your email · Welcome Guide</title><link rel="stylesheet" href="style.css?v=12">
+<meta name="robots" content="noindex"><title>Unlock with your email · Welcome Guide</title><link rel="stylesheet" href="style.css?v=13">
 <style>
 .lockCard form[hidden],.lockCard [hidden]{display:none!important}
 .lockCard .wide{width:100%;margin-top:var(--s3);min-height:52px;font-size:17px}
@@ -13,7 +13,7 @@
 <div class="lock"><div class="lockCard">
  <span class="logo big" aria-hidden="true">W</span><h1>Unlock with your email</h1>
  <form id="f1" novalidate>
-  <p class="hint" style="font-size:15px">Enter the email address you used for your purchase. We'll email you a 6-digit code.</p>
+  <p class="hint" style="font-size:15px">Enter the email address you used for your purchase. We'll email you a 6-digit code (it may land in your Updates or Promotions tab).</p>
   <label for="email">Your email</label><input id="email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" required placeholder="you@example.com">
   <details id="orderBox"><summary>Bought on Etsy? First time here? Add your order number</summary>
    <label for="order">Etsy order number</label><input id="order" inputmode="numeric" autocomplete="off" placeholder="e.g. 3141592653">
@@ -24,7 +24,7 @@
  <form id="f2" novalidate hidden>
   <p class="sent" id="sentTo"></p>
   <label for="code">6-digit code</label><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" required placeholder="000000">
-  <p class="hint">No email after 2 minutes? Check your spam or promotions folder.</p>
+  <p class="hint">The email comes from <b>Welcome Guide</b>. Not in your inbox after 2 minutes? In Gmail, check the <b>Updates</b> or <b>Promotions</b> tab, and your spam folder.</p>
   <p id="e2" class="lockErr" role="alert"></p>
   <button id="b2" class="primary wide">Unlock</button>
   <div class="links"><button type="button" id="resend" class="linkBtn">Send a new code</button><button type="button" id="back" class="linkBtn">Use a different email</button></div>
@@ -33,7 +33,7 @@
  <div id="off" hidden><p>Email unlock isn't switched on yet. Please use the unlock key from your order instead.</p></div>
  <div class="lockHelp"><p>Already have a key (starts with WG1-)? <a href="./">Paste it on the builder page</a>.</p><p class="hint">Unlocking on another phone or computer later? Just come back here and use the same email.</p></div>
 </div></div>
-<script src="config.js?v=12"></script>
+<script src="config.js?v=13"></script>
 <script>
 (function(){
 const C=window.WG_CONFIG||{},S=String(C.serviceUrl||'').replace(/\/$/,''),$=id=>document.getElementById(id);
