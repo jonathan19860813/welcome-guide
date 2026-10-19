@@ -155,3 +155,4 @@ select{display:block;width:100%;font:inherit;font-size:16px;color:var(--ink);pad
 .langLbl{font-size:15px;color:var(--ink)}
 .trBox{margin-top:8px;padding:10px 12px;border:1px dashed #d5cbb8;border-radius:var(--r-sm);background:#fff}.trBox .warn{color:#9a4b00;font-weight:600}
 .wTog{background:transparent;border:1px solid rgba(245,239,228,.45);color:#f5efe4;font-size:13px;padding:4px 10px;min-height:32px;border-radius:999px;margin-top:2px;cursor:pointer}
+.unitBadge{position:relative;z-index:1;display:inline-flex;flex-wrap:wrap;align-items:baseline;gap:.15rem .5rem;margin:0 0 14px;padding:8px 14px;border-radius:14px;background:rgba(245,239,228,.16);border:1px solid rgba(245,239,228,.35);color:#fff}.unitBadge .ubL{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#f2c9a8}.unitBadge .ubV{font-size:20px;font-weight:700;line-height:1.2}
