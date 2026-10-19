@@ -1,5 +1,5 @@
 // Version check: an old cached index.html loading this newer app.js reloads once with a cache-busting URL.
-const WG_VERSION='7';
+const WG_VERSION='8';
 (function(){try{const m=document.querySelector('meta[name=wg-version]');if(m&&m.content===WG_VERSION)return;
  if(sessionStorage.getItem('wg-reloaded')===WG_VERSION)return;sessionStorage.setItem('wg-reloaded',WG_VERSION);
  const u=new URL(location.href);u.searchParams.set('r',WG_VERSION+'-'+Date.now());location.replace(u.toString());throw new Error('wg: reloading for new version')}catch(e){if(String(e.message).startsWith('wg:'))throw e}})();
@@ -37,6 +37,7 @@ const LANGS=Object.keys(I18N);
 // pt (Portugal) existing; extra languages from langs.js
 for(const k in (window.WG_TX||{})){const v=WG_TX[k].split('|');I18N[k]=Object.fromEntries(WG_KEYS.map((x,j)=>[x,v[j]||I18N.en[x]]))}
 for(const k in (window.WG_TX2||{}))if(I18N[k]){const v=WG_TX2[k].split('|');I18N[k].stay=v[0];I18N[k].unitWord=v[1];I18N[k].guide=v[2]}
+for(const k in (window.WG_TX3||{}))if(I18N[k]){const v=WG_TX3[k].split('|');I18N[k].showOrig=v[0];I18N[k].showTr=v[1]}
 for(const k in I18N)for(const x in I18N.en)if(I18N[k][x]==null)I18N[k][x]=I18N.en[x]||'';
 window.WG_I18N=I18N;
 const isRTL=l=>!!(window.WG_META&&WG_META[l]&&WG_META[l][3]);const htmlLang=l=>(window.WG_HTMLLANG||{})[l]||l;
@@ -44,7 +45,7 @@ const UF=['num','name','bldg','note','wifiName','wifiPass','code','extra'];
 // Build the guest-facing guide object: shared guide (cleaned) merged with one unit's details.
 const utxt=(u,w)=>{w=w||'Unit';const n=(u.name||'').trim();return [u.num?w+' '+u.num:'',/^\d+[a-zA-Z]?$/.test(n)?w+' '+n:n].filter(Boolean).join(' · ')};
 function ulabel(u){if(!u)return '';return [u.bldg,utxt(u)].filter(Boolean).join(' – ')}
-function guestData(data,u){const c=JSON.parse(JSON.stringify(data));delete c.multi;delete c.units;delete c.unitPrefix;delete c.unitCount;
+function guestData(data,u){const c=JSON.parse(JSON.stringify(data));delete c.multi;delete c.units;delete c.unitPrefix;delete c.unitCount;delete c.welcomeTSrc;delete c.welcomeTLang;if(!c.welcomeT||!c.welcome||c.lang!==data.welcomeTLang||c.lang==='en'||!c.lang)delete c.welcomeT;
  for(const k in LISTS)c[k]=(c[k]||[]).filter(o=>Object.values(o).some(v=>v));
  if(!c.lang||c.lang==='en'||!I18N[c.lang])delete c.lang;
  if(u){c.unit=utxt(u,(I18N[data.lang]||I18N.en).unitWord);if(u.bldg)c.building=u.bldg;if(u.note)c.unitNote=u.note;if(u.code)c.code=u.code;if(u.extra)c.unitExtra=u.extra;if(u.wifiName)c.wifiName=u.wifiName;if(u.wifiPass||u.wifiName)c.wifiPass=u.wifiPass||''}
@@ -77,9 +78,9 @@ function render(d){const T=I18N[d.lang]||I18N.en;
  if(c)sec('help','☎️ '+esc(T.help),`<div class="contacts">${c}</div>`);
  const cl=(d.checklist||[]).filter(x=>x.text);if(cl.length||d.checkoutNotes)sec('out','👋 '+T.out,`${d.checkoutNotes?`<p class="pre">${esc(d.checkoutNotes)}</p>`:''}<div class="check">${cl.map((x,i)=>`<label><input type="checkbox" data-ci="${i}"> ${esc(x.text)}</label>`).join('')}</div>`);
  if(!d.property&&!s.length)return '<div class="empty">Start filling in the form — your guest guide appears here.</div>';
- return `<div class="hero"><small>${T.welcome}</small><h1>${esc(d.property||T.stay)}</h1>${d.building?`<p class="bldgName">${esc(d.building)}</p>`:''}${d.unit?`<p class="unitName">${esc(d.unit)}</p>`:''}${d.welcome?`<p>${esc(d.welcome)}</p>`:''}${d.host?`<p style="margin-top:.6rem;opacity:.8">— ${esc(d.host)}, ${T.yourHost}</p>`:''}</div><nav class="nav">${nav.join('')}</nav>${s.join('')}<div class="foot">${T.bye} ✨</div>`;
+ return `<div class="hero"><small>${T.welcome}</small><h1>${esc(d.property||T.stay)}</h1>${d.building?`<p class="bldgName">${esc(d.building)}</p>`:''}${d.unit?`<p class="unitName">${esc(d.unit)}</p>`:''}${d.welcomeT?`<p class="wT" lang="${esc(htmlLang(d.lang||'en'))}">${esc(d.welcomeT)}</p><p class="wO" dir="auto" hidden>${esc(d.welcome||'')}</p><button type="button" class="wTog" data-wtog data-a="${esc(T.showOrig)}" data-b="${esc(T.showTr)}">${esc(T.showOrig)}</button>`:d.welcome?`<p>${esc(d.welcome)}</p>`:''}${d.host?`<p style="margin-top:.6rem;opacity:.8">— ${esc(d.host)}, ${T.yourHost}</p>`:''}</div><nav class="nav">${nav.join('')}</nav>${s.join('')}<div class="foot">${T.bye} ✨</div>`;
 }
-function wire(root){root.addEventListener('click',e=>{const c=e.target.closest('[data-copy]');if(c){copy(c.dataset.copy,c.dataset.msg||'Copied');return}
+function wire(root){root.addEventListener('click',e=>{const w=e.target.closest('[data-wtog]');if(w){const h=w.closest('.hero'),o=h.querySelector('.wO'),t=h.querySelector('.wT'),show=o.hidden;o.hidden=!show;t.hidden=show;w.textContent=show?w.dataset.b:w.dataset.a;return}const c=e.target.closest('[data-copy]');if(c){copy(c.dataset.copy,c.dataset.msg||'Copied');return}
  const j=e.target.closest('[data-jump]');if(j){e.preventDefault();const el=root.querySelector('#s-'+j.dataset.jump);el&&el.scrollIntoView({behavior:'smooth',block:'start'})}})}
 
 // guest mode
@@ -114,9 +115,11 @@ function buildUnits(){$('#multi').checked=!!data.multi;$('#unitsBox').hidden=!da
  const B=(data.curB||'').trim(),us=data.units.filter(u=>!B||same(u.bldg,B));$('#unitUsed').innerHTML=[...new Set(us.map(ukey).filter(Boolean))].map(k=>`<option value="${esc(k)}">`).join('');
  const u=curUnit(false);UD.forEach(f=>$('#ud-'+f).value=u?u[f]||'':'');$('#uLabel').textContent=u||data.curU||data.curB?'Link label: '+(ulabel(u||{bldg:data.curB,name:data.curU})||'—'):''}
 function fill(){norm();form.querySelectorAll('[name]').forEach(el=>el.value=data[el.name]||'');buildLists();buildUnits();update()}
-function update(){localStorage.setItem(KEY,JSON.stringify(data));const pv=$('#preview');pv.lang=htmlLang(data.lang||'en');pv.dir=isRTL(data.lang)?'rtl':'ltr';pv.innerHTML=render(guestData(data,data.multi?(curUnit(false)||((data.curB||data.curU)?{bldg:data.curB,name:data.curU}:null)):null))}
+function trState(){const btn=$('#btnTr');if(!btn)return;const L=data.lang||'en',M=window.WG_META||{},nm=M[L]?M[L][1]:L;const en=L==='en';$('#trBox').hidden=en;if(en)return;btn.textContent='🌐 Translate to '+nm;
+ const st=$('#trStatus');if(!data.welcomeT){st.textContent='';st.className='hint'}else if(data.welcomeTLang!==L){st.textContent='⚠️ The translation below is in another language, so guests will see your original text. Translate again or type your own.';st.className='hint warn'}else if((data.welcomeTSrc||'')!==(data.welcome||'')){st.textContent='⚠️ Your welcome message changed after this translation. Translate again or update the text below.';st.className='hint warn'}else{st.textContent='✓ Guests will see this translation (with a “Show original” button).';st.className='hint'}}
+function update(){trState();localStorage.setItem(KEY,JSON.stringify(data));const pv=$('#preview');pv.lang=htmlLang(data.lang||'en');pv.dir=isRTL(data.lang)?'rtl':'ltr';pv.innerHTML=render(guestData(data,data.multi?(curUnit(false)||((data.curB||data.curU)?{bldg:data.curB,name:data.curU}:null)):null))}
 wire($('#preview'));
-form.addEventListener('input',e=>{const t=e.target;if(t.id==='multi'){data.multi=t.checked;buildUnits()}else if(t.id==='uBldg'||t.id==='uWhich'){data[t.id==='uBldg'?'curB':'curU']=t.value;const u=curUnit(false);UD.forEach(f=>$('#ud-'+f).value=u?u[f]||'':'');$('#uLabel').textContent='Link label: '+(ulabel(u||{bldg:data.curB,name:data.curU})||'—')}else if(t.dataset.ud){const u=curUnit(true);if(u)u[t.dataset.ud]=t.value;else return toast('Enter a building or unit first')}else if(t.name){data[t.name]=t.value;if(t.name==='lang')localStorage.setItem('wg-lang',t.value)}else if(t.dataset.k)data[t.dataset.k][+t.dataset.i][t.dataset.f]=t.value;update()});
+form.addEventListener('input',e=>{const t=e.target;if(t.id==='multi'){data.multi=t.checked;buildUnits()}else if(t.id==='uBldg'||t.id==='uWhich'){data[t.id==='uBldg'?'curB':'curU']=t.value;const u=curUnit(false);UD.forEach(f=>$('#ud-'+f).value=u?u[f]||'':'');$('#uLabel').textContent='Link label: '+(ulabel(u||{bldg:data.curB,name:data.curU})||'—')}else if(t.dataset.ud){const u=curUnit(true);if(u)u[t.dataset.ud]=t.value;else return toast('Enter a building or unit first')}else if(t.name){data[t.name]=t.value;if(t.name==='welcomeT'){data.welcomeTSrc=data.welcome;data.welcomeTLang=data.lang}if(t.name==='lang')localStorage.setItem('wg-lang',t.value)}else if(t.dataset.k)data[t.dataset.k][+t.dataset.i][t.dataset.f]=t.value;update()});
 form.addEventListener('click',e=>{const a=e.target.closest('[data-add]'),r=e.target.closest('[data-rm]');
  if(a){const k=a.dataset.add;data[k].push(Object.fromEntries(LISTS[k].map(f=>[f,''])));buildLists();update();const ins=form.querySelectorAll(`[data-k="${k}"]`);ins.length&&ins[ins.length-LISTS[k].length].focus()}
  if(r){const k=r.dataset.rm,i=+r.dataset.i,[gone]=data[k].splice(i,1);buildLists();update();toast('Item removed',()=>{data[k].splice(i,0,gone);buildLists();update()})}});
@@ -128,6 +131,24 @@ function showLink(url,name){curName=name||'';$('#modalTitle').textContent=name?'
  $('#linkOut').value=url;$('#btnOpen').href=url;$('#linkInfo').textContent=`Link length: ${url.length} characters. If you change the guide, create a new link.`;
  const q=$('#qr');q.innerHTML='';lastQR=makeQR(url);if(lastQR)q.innerHTML=lastQR.createSvgTag({cellSize:4,margin:4,scalable:true});else q.innerHTML='<p class="hint">Too much content for a QR code — shorten some text, or share the link directly.</p>';
  $('#modal').hidden=false}
+const MM={nb:'no',zh:'zh-CN',zht:'zh-TW',ptbr:'pt-BR',es419:'es',fil:'tl',nso:'nso'},CH={nb:'no',zht:'zh-Hant',ptbr:'pt',es419:'es'};
+function chunks(t){const parts=t.match(/[^.!?。！？\n]+[.!?。！？]*\s*|\n+/g)||[t],out=[];let cur='';const b=x=>new TextEncoder().encode(x).length;
+ for(const p of parts){if(b(cur+p)>450&&cur){out.push(cur);cur=''}cur+=p}if(cur)out.push(cur);return out}
+const withTimeout=(p,ms)=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),ms))]);
+async function viaChrome(text,to){return withTimeout(viaChrome0(text,to),15000).catch(()=>null)}
+async function viaChrome0(text,to){if(!('Translator' in self))return null;const o={sourceLanguage:'en',targetLanguage:CH[to]||to};
+ try{if((await Translator.availability(o))==='unavailable')return null;const tr=await Translator.create(o);const lines=text.split('\n');const r=[];for(const l of lines)r.push(l.trim()?await tr.translate(l):l);return r.join('\n')}catch(e){return null}}
+async function viaMyMemory(text,to){const r=[];for(const c of chunks(text)){if(!c.trim()){r.push(c);continue}const lead=c.match(/^\s*/)[0],trail=c.match(/\s*$/)[0];
+  const res=await withTimeout(fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(c.trim())+'&langpair=en|'+(MM[to]||to)),15000);if(!res.ok)throw new Error('HTTP '+res.status);
+  const j=await res.json();if(j.quotaFinished||+j.responseStatus!==200)throw new Error(j.responseDetails||'quota');let t=j.responseData&&j.responseData.translatedText||'';
+  if(!t||/^(MYMEMORY WARNING|INVALID|PLEASE SELECT)/i.test(t))throw new Error(t||'empty');t=t.replace(/&#39;/g,"'").replace(/&quot;/g,'"').replace(/&amp;/g,'&');r.push(lead+t+trail)}return r.join('')}
+$('#btnTr').onclick=async()=>{const src=(data.welcome||'').trim(),L=data.lang;if(!src)return toast('Write a welcome message first');if(!L||L==='en')return;
+ const btn=$('#btnTr'),st=$('#trStatus');btn.disabled=true;st.className='hint';st.textContent='Translating…';let out=null,via='';
+ try{out=await viaChrome(data.welcome,L);if(out)via='your browser';else{out=await viaMyMemory(data.welcome,L);via='MyMemory'}}catch(e){out=null;console.warn('translate failed',e)}
+ btn.disabled=false;
+ if(!out){st.className='hint warn';st.textContent='😕 The free translation service isn’t available right now (it may be offline or its daily limit reached). Please type your own translation below, or try again later.';$('#trWrap textarea').focus();return}
+ data.welcomeT=out;data.welcomeTSrc=data.welcome;data.welcomeTLang=L;$('[name=welcomeT]').value=out;update();
+ st.textContent='✓ Translated by '+via+'. Please read it through and correct anything that sounds off — guests will see this text.';};
 $('#btnLink').onclick=()=>{if(data.multi){const u=curUnit(!!(data.curU||data.curB));if(u){buildUnits();return showLink(linkFor(guestData(data,u)),ulabel(u))}}showLink(linkFor(guestData(data,null)))};
 form.addEventListener('change',e=>{if(e.target.id==='uBldg'||e.target.id==='uWhich'){if(e.target.id==='uWhich'&&(data.curU||'').trim()&&curUnit(true))update();buildUnits()}});
 $('#btnPrint').onclick=()=>{if(!lastQR)return toast('No QR code to print');document.body.classList.remove('allqrOn');window.print()};

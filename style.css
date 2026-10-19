@@ -153,3 +153,5 @@ select{display:block;width:100%;font:inherit;font-size:16px;color:var(--ink);pad
 #langBox label{font-weight:600}
 .udetails{margin:.6rem 0}.udetails>summary{cursor:pointer;font-weight:600}
 .langLbl{font-size:15px;color:var(--ink)}
+.trBox{margin-top:8px;padding:10px 12px;border:1px dashed #d5cbb8;border-radius:var(--r-sm);background:#fff}.trBox .warn{color:#9a4b00;font-weight:600}
+.wTog{background:transparent;border:1px solid rgba(245,239,228,.45);color:#f5efe4;font-size:13px;padding:4px 10px;min-height:32px;border-radius:999px;margin-top:2px;cursor:pointer}
