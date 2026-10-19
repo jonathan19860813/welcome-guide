@@ -23,8 +23,10 @@ async function tryKey(key){key=String(key||'').trim();if(!key)return {err:'Pleas
   const l={type:'sig',key,kid:v.kid,checkedAt:0};if(isRevoked(l))return {err:'This key has been deactivated. Contact the seller if you think this is a mistake.'};return {lic:l};
 }
 function lockOut(msg){localStorage.removeItem(LK);sessionStorage.setItem('wg-lock-msg',msg||'');location.reload()}
-async function recheck(l){ // fail OPEN: network problems never lock a paying user out
-  try{if(l.type==='sig'&&C.serviceUrl&&Date.now()-(l.checkedAt||0)>DAY){const r=await fetch(C.serviceUrl.replace(/\/$/,'')+'/check?kid='+l.kid);if(!r.ok)return;const j=await r.json();
+async function recheck(l,ev){ // fail OPEN: network problems never lock a paying user out
+  // ev='unlock' forces a /check right after a key is entered (the service logs it for sharing alerts); otherwise once per 24 h.
+  try{if(l.type==='sig'&&C.serviceUrl&&(ev==='unlock'||Date.now()-(l.checkedAt||0)>DAY)){const ac=typeof AbortController==='function'?new AbortController():null;const t=ac&&setTimeout(()=>ac.abort(),8000);
+      const r=await fetch(C.serviceUrl.replace(/\/$/,'')+'/check?kid='+l.kid+'&ev='+(ev||'recheck'),{cache:'no-store',signal:ac&&ac.signal}).finally(()=>t&&clearTimeout(t));if(!r.ok)return;const j=await r.json();
       if(j.revoked)return lockOut('This key has been deactivated (refund or reported sharing).');l.checkedAt=Date.now();localStorage.setItem(LK,JSON.stringify(l))}
     if(l.type==='gumroad'&&C.gumroadProductId&&Date.now()-(l.checkedAt||0)>7*DAY){const s=await gumroadVerify(l.key);if(s==='revoked'||s==='invalid')return lockOut('This purchase was refunded or disputed, so the key is no longer active.');l.checkedAt=Date.now();localStorage.setItem(LK,JSON.stringify(l))}
   }catch(e){}
@@ -33,14 +35,14 @@ window.wgGate=async function(start){
   const lockEl=document.getElementById('lock'),q=new URLSearchParams(location.search),qk=q.get('key');
   let l=null;try{l=JSON.parse(localStorage.getItem(LK)||'null')}catch(e){}
   if(l&&(isRevoked(l)||(l.type==='sig'&&!verifySig(l.key)))){localStorage.removeItem(LK);l=null}
-  if(qk){const r=await tryKey(qk);history.replaceState(null,'',location.pathname+location.hash);if(r.lic){localStorage.setItem(LK,JSON.stringify(r.lic));l=r.lic}else sessionStorage.setItem('wg-lock-msg',r.err)}
-  if(l){start();recheck(l);return}
+  if(qk){const r=await tryKey(qk);history.replaceState(null,'',location.pathname+location.hash);if(r.lic){localStorage.setItem(LK,JSON.stringify(r.lic));l=r.lic;l.fresh=1}else sessionStorage.setItem('wg-lock-msg',r.err)}
+  if(l){const ev=l.fresh?'unlock':'';delete l.fresh;start();recheck(l,ev);return}
   lockEl.hidden=false;const err=document.getElementById('lockErr'),inp=document.getElementById('lockKey'),btn=document.getElementById('lockBtn');
   const m=sessionStorage.getItem('wg-lock-msg');if(m){err.textContent=m;sessionStorage.removeItem('wg-lock-msg')}
   if(C.buyUrl){const b=document.getElementById('lockBuy');b.href=C.buyUrl;b.hidden=false}
   if(C.etsyClaimUrl){const e=document.getElementById('lockClaim');e.href=C.etsyClaimUrl;e.parentNode.hidden=false}
   document.getElementById('lockForm').onsubmit=async e=>{e.preventDefault();btn.disabled=true;btn.textContent='Checking…';err.textContent='';
     const r=await tryKey(inp.value);btn.disabled=false;btn.textContent='Unlock';
-    if(r.err){err.textContent=r.err;return}localStorage.setItem(LK,JSON.stringify(r.lic));lockEl.hidden=true;start()};
+    if(r.err){err.textContent=r.err;return}localStorage.setItem(LK,JSON.stringify(r.lic));lockEl.hidden=true;start();recheck(r.lic,'unlock')};
 };
 })();
