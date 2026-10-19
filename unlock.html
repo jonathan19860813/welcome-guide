@@ -1,0 +1,70 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0f4c47">
+<meta name="robots" content="noindex"><title>Unlock with your email · Welcome Guide</title><link rel="stylesheet" href="style.css?v=12">
+<style>
+.lockCard form[hidden],.lockCard [hidden]{display:none!important}
+.lockCard .wide{width:100%;margin-top:var(--s3);min-height:52px;font-size:17px}
+#code{font:600 28px/1.2 ui-monospace,Menlo,monospace;letter-spacing:.35em;text-align:center;padding-left:.35em}
+.lockCard details{margin-top:var(--s3);font-size:14px;color:var(--muted)}.lockCard summary{cursor:pointer;color:var(--teal);font-weight:600;min-height:32px;display:flex;align-items:center}
+.sent{background:var(--teal-50);border-radius:var(--r-sm);padding:10px 12px;font-size:14px;margin:0 0 var(--s2)}.sent b{word-break:break-all}
+.links{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:var(--s3);font-size:14px}
+.linkBtn{background:none;border:0;padding:6px 0;min-height:36px;color:var(--teal);font-weight:600;font-size:14px;box-shadow:none}.linkBtn:disabled{color:var(--muted);font-weight:400}
+.ok{color:var(--teal);font-weight:600}
+</style></head><body>
+<div class="lock"><div class="lockCard">
+ <span class="logo big" aria-hidden="true">W</span><h1>Unlock with your email</h1>
+ <form id="f1" novalidate>
+  <p class="hint" style="font-size:15px">Enter the email address you used for your purchase. We'll email you a 6-digit code.</p>
+  <label for="email">Your email</label><input id="email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" required placeholder="you@example.com">
+  <details id="orderBox"><summary>Bought on Etsy? First time here? Add your order number</summary>
+   <label for="order">Etsy order number</label><input id="order" inputmode="numeric" autocomplete="off" placeholder="e.g. 3141592653">
+   <p class="hint">Find it in your Etsy purchase receipt (Purchases → your order). You only need it the first time.</p></details>
+  <p id="e1" class="lockErr" role="alert"></p>
+  <button id="b1" class="primary wide">Email me a code</button>
+ </form>
+ <form id="f2" novalidate hidden>
+  <p class="sent" id="sentTo"></p>
+  <label for="code">6-digit code</label><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" required placeholder="000000">
+  <p class="hint">No email after 2 minutes? Check your spam or promotions folder.</p>
+  <p id="e2" class="lockErr" role="alert"></p>
+  <button id="b2" class="primary wide">Unlock</button>
+  <div class="links"><button type="button" id="resend" class="linkBtn">Send a new code</button><button type="button" id="back" class="linkBtn">Use a different email</button></div>
+ </form>
+ <div id="done" hidden><p class="ok" role="status">Unlocked! Opening the builder…</p><p class="hint">If nothing happens, <a id="goLink" href="./">tap here</a>.</p></div>
+ <div id="off" hidden><p>Email unlock isn't switched on yet. Please use the unlock key from your order instead.</p></div>
+ <div class="lockHelp"><p>Already have a key (starts with WG1-)? <a href="./">Paste it on the builder page</a>.</p><p class="hint">Unlocking on another phone or computer later? Just come back here and use the same email.</p></div>
+</div></div>
+<script src="config.js?v=12"></script>
+<script>
+(function(){
+const C=window.WG_CONFIG||{},S=String(C.serviceUrl||'').replace(/\/$/,''),$=id=>document.getElementById(id);
+const q=new URLSearchParams(location.search),LS='wg-unlock-email';let email='',cool=0,timer=0;
+if(!S||!C.emailUnlock){$('f1').hidden=true;$('off').hidden=false;return}
+$('email').value=q.get('email')||localStorage.getItem(LS)||'';
+if(q.get('order')){$('order').value=q.get('order');$('orderBox').open=true}
+async function api(path,body){const ac=new AbortController(),t=setTimeout(()=>ac.abort(),15000);
+  try{const r=await fetch(S+path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),signal:ac.signal,cache:'no-store'});
+    const j=await r.json().catch(()=>({}));return {status:r.status,j}}
+  catch(e){return {status:0,j:{error:"We couldn't reach the unlock service. Check your internet connection and try again."}}}finally{clearTimeout(t)}}
+function busy(b,on,label){b.disabled=on;b.textContent=on?'Please wait…':label}
+function startCool(s){cool=s;clearInterval(timer);const b=$('resend');const tick=()=>{if(cool<=0){clearInterval(timer);b.disabled=false;b.textContent='Send a new code';return}b.disabled=true;b.textContent='New code in '+cool+'s';cool--};tick();timer=setInterval(tick,1000)}
+async function request(){
+  const r=await api('/otp/request',{email,order:$('order').value.trim()});
+  if(r.status!==200)return r.j.error||'Something went wrong. Please try again.';
+  localStorage.setItem(LS,email);$('sentTo').textContent='';
+  const s=$('sentTo');s.append('If '),s.appendChild(Object.assign(document.createElement('b'),{textContent:email})),s.append(' is registered for a purchase, a code is on its way. It expires in 15 minutes.');
+  startCool(60);return '';
+}
+$('f1').onsubmit=async e=>{e.preventDefault();const b=$('b1');$('e1').textContent='';
+  email=$('email').value.trim().toLowerCase();if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){$('e1').textContent='Please enter a valid email address.';return}
+  busy(b,true);const err=await request();busy(b,false,'Email me a code');
+  if(err){$('e1').textContent=err;return}$('f1').hidden=true;$('f2').hidden=false;$('code').value='';$('code').focus()};
+$('resend').onclick=async()=>{$('e2').textContent='';const err=await request();$('e2').textContent=err||'';if(!err){$('code').value='';$('code').focus()}};
+$('back').onclick=()=>{$('f2').hidden=true;$('f1').hidden=false;$('e1').textContent='';$('email').focus()};
+$('code').oninput=()=>{const d=$('code').value.replace(/\D/g,'').slice(0,6);$('code').value=d;if(d.length===6&&!$('b2').disabled)$('f2').requestSubmit?$('f2').requestSubmit():$('b2').click()};
+$('f2').onsubmit=async e=>{e.preventDefault();const b=$('b2'),code=$('code').value.replace(/\D/g,'');$('e2').textContent='';
+  if(code.length!==6){$('e2').textContent='Type the 6-digit code from the email.';return}
+  busy(b,true);const r=await api('/otp/verify',{email,code});
+  if(r.status===200&&r.j.ok&&r.j.key){const url='./?key='+encodeURIComponent(r.j.key);$('f2').hidden=true;$('done').hidden=false;$('goLink').href=url;location.replace(url);return}
+  busy(b,false,'Unlock');$('e2').textContent=r.j.error||'Something went wrong. Please try again.';$('code').select()};
+})();
+</script></body></html>

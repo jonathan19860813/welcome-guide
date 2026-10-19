@@ -8,6 +8,7 @@ window.WG_CONFIG={
   gumroadProductId:'uFNvVqw_7tbo_p2oDtWYvg==',
   buyUrl:'https://cjtools.gumroad.com/l/zxymj',          // where the "Buy a key" link points (Gumroad/Etsy listing)
   etsyClaimUrl:'',      // usually serviceUrl + '/claim'
+  emailUnlock:false,    // true = show 'Unlock with your email' (unlock.html, 6-digit email code). Needs serviceUrl + key-service/DEPLOY-EMAIL-OTP.md done.
   // EMERGENCY REVOKE LIST: key ids (kid, 12 hex chars) or Gumroad license keys that must stop working. Push to main to apply.
   revoked:['4bb39b5e160f'] // 4bb39b5e160f = test key used by QA to prove revocation works; safe to remove
 };

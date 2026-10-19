@@ -40,6 +40,7 @@ window.wgGate=async function(start){
   lockEl.hidden=false;const err=document.getElementById('lockErr'),inp=document.getElementById('lockKey'),btn=document.getElementById('lockBtn');
   const m=sessionStorage.getItem('wg-lock-msg');if(m){err.textContent=m;sessionStorage.removeItem('wg-lock-msg')}
   if(C.buyUrl){const b=document.getElementById('lockBuy');b.href=C.buyUrl;b.hidden=false}
+  if(C.serviceUrl&&C.emailUnlock){const e=document.getElementById('lockEmail');if(e)e.parentNode.hidden=false}
   if(C.etsyClaimUrl){const e=document.getElementById('lockClaim');e.href=C.etsyClaimUrl;e.parentNode.hidden=false}
   document.getElementById('lockForm').onsubmit=async e=>{e.preventDefault();btn.disabled=true;btn.textContent='Checking…';err.textContent='';
     const r=await tryKey(inp.value);btn.disabled=false;btn.textContent='Unlock';
