@@ -1,8 +1,19 @@
 // Version check: an old cached index.html loading this newer app.js reloads once with a cache-busting URL.
-const WG_VERSION='9';
+const WG_VERSION='10';
 (function(){try{const m=document.querySelector('meta[name=wg-version]');if(m&&m.content===WG_VERSION)return;
  if(sessionStorage.getItem('wg-reloaded')===WG_VERSION)return;sessionStorage.setItem('wg-reloaded',WG_VERSION);
  const u=new URL(location.href);u.searchParams.set('r',WG_VERSION+'-'+Date.now());location.replace(u.toString());throw new Error('wg: reloading for new version')}catch(e){if(String(e.message).startsWith('wg:'))throw e}})();
+// Live update check: a tab/page kept open (or served from cache) asks the server for version.txt, bypassing all caches,
+// on load, when the tab becomes visible again and when restored from the back/forward cache; reloads once per new version.
+(function(){let busy=false,last=0;const cur=+WG_VERSION;
+ async function check(){if(busy||Date.now()-last<15000)return;busy=true;last=Date.now();
+  try{const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const v=(await r.text()).trim();
+   if(!/^\d+$/.test(v)||+v<=cur)return;let k='';try{k=sessionStorage.getItem('wg-vreload')||''}catch(e){}if(k===v)return;
+   try{sessionStorage.setItem('wg-vreload',v)}catch(e){return}
+   const u=new URL(location.href);u.searchParams.set('r',v+'-'+Date.now());location.replace(u.toString())}catch(e){}finally{busy=false}}
+ window.__wgCheckVersion=check;
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')check()});
+ addEventListener('pageshow',e=>{if(e.persisted)last=0;check()});addEventListener('focus',check);check()})();
 (function(){
 const KEY='wg-v1';
 const LISTS={rules:['text'],howto:['title','note'],recs:['name','type','note','map'],emergency:['label','number'],checklist:['text']};
@@ -40,13 +51,14 @@ for(const k in (window.WG_TX2||{}))if(I18N[k]){const v=WG_TX2[k].split('|');I18N
 for(const k in (window.WG_TX3||{}))if(I18N[k]){const v=WG_TX3[k].split('|');I18N[k].showOrig=v[0];I18N[k].showTr=v[1]}
 for(const k in I18N)for(const x in I18N.en)if(I18N[k][x]==null)I18N[k][x]=I18N.en[x]||'';
 window.WG_I18N=I18N;
+const str=v=>v==null?'':(typeof v==='object'?'':String(v));
 const isRTL=l=>!!(window.WG_META&&WG_META[l]&&WG_META[l][3]);const htmlLang=l=>(window.WG_HTMLLANG||{})[l]||l;
 const UF=['num','name','bldg','note','wifiName','wifiPass','code','extra'];
 // Build the guest-facing guide object: shared guide (cleaned) merged with one unit's details.
 const utxt=(u,w)=>{w=w||'Unit';const n=(u.name||'').trim();return [u.num?w+' '+u.num:'',/^\d+[a-zA-Z]?$/.test(n)?w+' '+n:n].filter(Boolean).join(' · ')};
 function ulabel(u){if(!u)return '';return [u.bldg,utxt(u)].filter(Boolean).join(' – ')}
 function guestData(data,u){const c=JSON.parse(JSON.stringify(data));delete c.multi;delete c.units;delete c.unitPrefix;delete c.unitCount;delete c.welcomeTSrc;delete c.welcomeTLang;if(!c.welcomeT||!c.welcome||c.lang!==data.welcomeTLang||c.lang==='en'||!c.lang)delete c.welcomeT;
- for(const k in LISTS)c[k]=(c[k]||[]).filter(o=>Object.values(o).some(v=>v));
+ for(const k in LISTS)c[k]=(Array.isArray(c[k])?c[k]:[]).filter(o=>o&&typeof o==='object'&&Object.values(o).some(v=>v));
  if(!c.lang||c.lang==='en'||!I18N[c.lang])delete c.lang;
  if(u){c.unit=utxt(u,(I18N[data.lang]||I18N.en).unitWord);if(u.bldg)c.building=u.bldg;if(u.note)c.unitNote=u.note;if(u.code)c.code=u.code;if(u.extra)c.unitExtra=u.extra;if(u.wifiName)c.wifiName=u.wifiName;if(u.wifiPass||u.wifiName)c.wifiPass=u.wifiPass||''}
  for(const k in c)if(c[k]===''||(Array.isArray(c[k])&&!c[k].length&&k!=='emergency'))delete c[k];
@@ -62,23 +74,25 @@ async function copy(txt,msg){try{await navigator.clipboard.writeText(txt)}catch(
 window.__wgCopy=copy;
 
 function render(d){const T=I18N[d.lang]||I18N.en;
+ const secErr=e=>{try{console.error('wg: a guide section failed to render',e)}catch(_){}};
  const s=[],nav=[];const sec=(id,title,html)=>{nav.push(`<a href="#" data-jump="${id}">${title}</a>`);s.push(`<section class="sec" id="s-${id}"><h2>${title}</h2>${html}</section>`)};
- if(d.unitNote||d.code||d.unitExtra)sec('unit','🚪 '+T.unit,`${d.unitNote?`<p class="pre">${esc(d.unitNote)}</p>`:''}${d.code?`<div class="wifi">${T.code}<button class="pw" data-copy="${esc(d.code)}" data-msg="${esc(T.copied)}"><span>${esc(d.code)}</span><span>${T.tap}</span></button></div>`:''}${d.unitExtra?`<p class="pre">${esc(d.unitExtra)}</p>`:''}`);
- if(d.checkin||d.checkout||d.checkinNotes||d.checkoutNotes)sec('arrive','🔑 '+T.arrive,`<div class="times"><div>${T.cin}<b>${esc(d.checkin)||'–'}</b></div><div>${T.cout}<b>${esc(d.checkout)||'–'}</b></div></div>${d.checkinNotes?`<p class="pre">${esc(d.checkinNotes)}</p>`:''}`);
- if(d.wifiName||d.wifiPass)sec('wifi','📶 '+T.wifi,`<div class="wifi">${T.net}: <b>${esc(d.wifiName)}</b>${d.wifiPass?`<button class="pw" data-copy="${esc(d.wifiPass)}" data-msg="${esc(T.pwCopied)}"><span>${esc(d.wifiPass)}</span><span>${T.tap}</span></button>`:''}</div>`);
- if(d.address||safeUrl(d.addressMap))sec('where','📍 '+T.addr,`${d.address?`<p class="pre">${esc(d.address)}</p>`:''}<a class="pill map" target="_blank" rel="noopener" href="${esc(safeUrl(d.addressMap)||'https://maps.google.com/?q='+encodeURIComponent(d.address))}">${esc(T.maps)}</a>${d.parking?`<h2 style="margin-top:1rem">🚗 ${T.park}</h2><p class="pre">${esc(d.parking)}</p>`:''}`);
- else if(d.parking)sec('park','🚗 '+T.park,`<p class="pre">${esc(d.parking)}</p>`);
- const rules=(d.rules||[]).filter(r=>r.text);if(rules.length)sec('rules','📋 '+T.rules,`<ul class="clean">${rules.map(r=>`<li>${esc(r.text)}</li>`).join('')}</ul>`);
- const how=(d.howto||[]).filter(h=>h.title||h.note);if(how.length)sec('how','🛠️ '+T.how,how.map(h=>`<div class="how"><b>${esc(h.title)}</b><span class="pre">${esc(h.note)}</span></div>`).join(''));
- const recs=(d.recs||[]).filter(r=>r&&(r.name||r.type||r.note||r.map));if(recs.length)sec('local','🌍 '+T.local,recs.map(r=>{const m=safeUrl(r.map);return `<div class="rec"><div>${r.name?`<b>${esc(r.name)}</b>`:''}${r.type?`<span class="tag">${esc(r.type)}</span>`:''}${r.note?`<div class="hint pre">${esc(r.note)}</div>`:''}${r.map&&!m?`<div class="hint">${esc(r.map)}</div>`:''}</div>${m?`<a class="pill map" target="_blank" rel="noopener" href="${esc(m)}">${T.map}</a>`:''}</div>`}).join(''));
- const em=(d.emergency||[]).filter(e=>e&&(e.number||e.label));let c='';
+ try{if(d.unitNote||d.code||d.unitExtra)sec('unit','🚪 '+T.unit,`${d.unitNote?`<p class="pre">${esc(d.unitNote)}</p>`:''}${d.code?`<div class="wifi">${T.code}<button class="pw" data-copy="${esc(d.code)}" data-msg="${esc(T.copied)}"><span>${esc(d.code)}</span><span>${T.tap}</span></button></div>`:''}${d.unitExtra?`<p class="pre">${esc(d.unitExtra)}</p>`:''}`);}catch(e){secErr(e)}
+ try{if(d.checkin||d.checkout||d.checkinNotes||d.checkoutNotes)sec('arrive','🔑 '+T.arrive,`<div class="times"><div>${T.cin}<b>${esc(d.checkin)||'–'}</b></div><div>${T.cout}<b>${esc(d.checkout)||'–'}</b></div></div>${d.checkinNotes?`<p class="pre">${esc(d.checkinNotes)}</p>`:''}`);}catch(e){secErr(e)}
+ try{if(d.wifiName||d.wifiPass)sec('wifi','📶 '+T.wifi,`<div class="wifi">${T.net}: <b>${esc(d.wifiName)}</b>${d.wifiPass?`<button class="pw" data-copy="${esc(d.wifiPass)}" data-msg="${esc(T.pwCopied)}"><span>${esc(d.wifiPass)}</span><span>${T.tap}</span></button>`:''}</div>`);}catch(e){secErr(e)}
+ try{if(d.address||safeUrl(d.addressMap))sec('where','📍 '+T.addr,`${d.address?`<p class="pre">${esc(d.address)}</p>`:''}<a class="pill map" target="_blank" rel="noopener" href="${esc(safeUrl(d.addressMap)||'https://maps.google.com/?q='+encodeURIComponent(d.address))}">${esc(T.maps)}</a>${d.parking?`<h2 style="margin-top:1rem">🚗 ${T.park}</h2><p class="pre">${esc(d.parking)}</p>`:''}`);
+ else if(d.parking)sec('park','🚗 '+T.park,`<p class="pre">${esc(d.parking)}</p>`);}catch(e){secErr(e)}
+ try{const rules=(d.rules||[]).filter(r=>r.text);if(rules.length)sec('rules','📋 '+T.rules,`<ul class="clean">${rules.map(r=>`<li>${esc(r.text)}</li>`).join('')}</ul>`);}catch(e){secErr(e)}
+ try{const how=(d.howto||[]).filter(h=>h.title||h.note);if(how.length)sec('how','🛠️ '+T.how,how.map(h=>`<div class="how"><b>${esc(h.title)}</b><span class="pre">${esc(h.note)}</span></div>`).join(''));}catch(e){secErr(e)}
+ try{const recs=(d.recs||[]).filter(r=>r&&(r.name||r.type||r.note||r.map));if(recs.length)sec('local','🌍 '+T.local,recs.map(r=>{const m=safeUrl(r.map);return `<div class="rec"><div>${r.name?`<b>${esc(r.name)}</b>`:''}${r.type?`<span class="tag">${esc(r.type)}</span>`:''}${r.note?`<div class="hint pre">${esc(r.note)}</div>`:''}${r.map&&!m?`<div class="hint">${esc(r.map)}</div>`:''}</div>${m?`<a class="pill map" target="_blank" rel="noopener" href="${esc(m)}">${T.map}</a>`:''}</div>`}).join(''));}catch(e){secErr(e)}
+ try{const em=(d.emergency||[]).filter(e=>e&&(e.number||e.label));let c='';
  if(d.hostPhone)c+=`<div class="contact"><span>${T.host}${d.host?' – '+esc(d.host):''}</span><a class="pill" href="tel:${esc(tel(d.hostPhone))}">📞 ${T.call}</a></div>`;
  if(d.hostWhatsapp)c+=`<div class="contact"><span>${T.waHost}</span><a class="pill wa" target="_blank" rel="noopener" href="https://wa.me/${wa(d.hostWhatsapp)}">💬 WhatsApp</a></div>`;
  c+=em.map(e=>`<div class="contact"><span>${esc(e.label)}</span>${e.number?`<a class="pill${EMERG.includes(tel(e.number))?' red':''}" href="tel:${esc(tel(e.number))}">📞 ${esc(e.number)}</a>`:''}</div>`).join('');
- if(c)sec('help','☎️ '+esc(T.help),`<div class="contacts">${c}</div>`);
- const cl=(d.checklist||[]).filter(x=>x.text);if(cl.length||d.checkoutNotes)sec('out','👋 '+T.out,`${d.checkoutNotes?`<p class="pre">${esc(d.checkoutNotes)}</p>`:''}<div class="check">${cl.map((x,i)=>`<label><input type="checkbox" data-ci="${i}"> ${esc(x.text)}</label>`).join('')}</div>`);
+ if(c)sec('help','☎️ '+esc(T.help),`<div class="contacts">${c}</div>`);}catch(e){secErr(e)}
+ try{const cl=(d.checklist||[]).filter(x=>x.text);if(cl.length||d.checkoutNotes)sec('out','👋 '+T.out,`${d.checkoutNotes?`<p class="pre">${esc(d.checkoutNotes)}</p>`:''}<div class="check">${cl.map((x,i)=>`<label><input type="checkbox" data-ci="${i}"> ${esc(x.text)}</label>`).join('')}</div>`);}catch(e){secErr(e)}
  if(!d.property&&!s.length&&!d.unit&&!d.building)return '<div class="empty">Start filling in the form — your guest guide appears here.</div>';
- return `<div class="hero"><small>${T.welcome}</small><h1>${esc(d.property||T.stay)}</h1>${d.building||d.unit?`<div class="unitBadge"><span class="ubL">🚪 ${esc(T.unit)}</span><b class="ubV">${esc([d.building,d.unit].filter(Boolean).join(' · '))}</b></div>`:''}${d.welcomeT?`<p class="wT" lang="${esc(htmlLang(d.lang||'en'))}">${esc(d.welcomeT)}</p><p class="wO" dir="auto" hidden>${esc(d.welcome||'')}</p><button type="button" class="wTog" data-wtog data-a="${esc(T.showOrig)}" data-b="${esc(T.showTr)}">${esc(T.showOrig)}</button>`:d.welcome?`<p>${esc(d.welcome)}</p>`:''}${d.host?`<p style="margin-top:.6rem;opacity:.8">— ${esc(d.host)}, ${T.yourHost}</p>`:''}</div><nav class="nav">${nav.join('')}</nav>${s.join('')}<div class="foot">${T.bye} ✨</div>`;
+ let hero='';try{hero=`<div class="hero"><small>${T.welcome}</small><h1>${esc(d.property||T.stay)}</h1>${d.building||d.unit?`<div class="unitBadge"><span class="ubL">🚪 ${esc(T.unit)}</span><b class="ubV">${esc([d.building,d.unit].filter(Boolean).join(' · '))}</b></div>`:''}${d.welcomeT?`<p class="wT" lang="${esc(htmlLang(d.lang||'en'))}">${esc(d.welcomeT)}</p><p class="wO" dir="auto" hidden>${esc(d.welcome||'')}</p><button type="button" class="wTog" data-wtog data-a="${esc(T.showOrig)}" data-b="${esc(T.showTr)}">${esc(T.showOrig)}</button>`:d.welcome?`<p>${esc(d.welcome)}</p>`:''}${d.host?`<p style="margin-top:.6rem;opacity:.8">— ${esc(d.host)}, ${T.yourHost}</p>`:''}</div>`}catch(e){secErr(e);hero=`<div class="hero"><h1>${esc(String(d.property||T.stay||''))}</h1></div>`}
+ return `${hero}<nav class="nav">${nav.join('')}</nav>${s.join('')}<div class="foot">${T.bye} ✨</div>`;
 }
 function wire(root){root.addEventListener('click',e=>{const w=e.target.closest('[data-wtog]');if(w){const h=w.closest('.hero'),o=h.querySelector('.wO'),t=h.querySelector('.wT'),show=o.hidden;o.hidden=!show;t.hidden=show;w.textContent=show?w.dataset.b:w.dataset.a;return}const c=e.target.closest('[data-copy]');if(c){copy(c.dataset.copy,c.dataset.msg||'Copied');return}
  const j=e.target.closest('[data-jump]');if(j){e.preventDefault();const el=root.querySelector('#s-'+j.dataset.jump);el&&el.scrollIntoView({behavior:'smooth',block:'start'})}})}
@@ -103,10 +117,20 @@ if(h.startsWith('#g=')){const g=$('#guest');g.hidden=false;let d=null;
 wgGate(function(){
 $('#editor').hidden=false;try{if(window.WG_META&&window.WG_REGIONS){const sel=document.querySelector('select[name=lang]'),M=window.WG_META,o=k=>`<option value="${k}" lang="${htmlLang(k)}">${M[k][0]===M[k][1]?M[k][0]:M[k][0]+' — '+M[k][1]}</option>`;
  sel.innerHTML=o('en')+WG_REGIONS.map(([r,n])=>`<optgroup label="${n}">`+Object.keys(M).filter(k=>M[k][2]===r&&I18N[k]).sort((a,b)=>M[a][1].localeCompare(M[b][1])).map(o).join('')+'</optgroup>').join('')}}catch(e){console.warn('Language list setup failed; using built-in options',e)}const form=$('#form');let data;
-try{data=Object.assign(blank(),JSON.parse(localStorage.getItem(KEY)||'null')||{})}catch(e){data=blank()}
+{let raw=null;try{raw=localStorage.getItem(KEY)}catch(e){}try{data=Object.assign(blank(),sanitize(JSON.parse(raw||'null')||{}))}catch(e){console.error('wg: could not read saved draft',e);try{if(raw)localStorage.setItem(KEY+'-backup',raw)}catch(_){}data=blank()}}
 function buildLists(){document.querySelectorAll('[data-list]').forEach(box=>{const k=box.dataset.list,f=LISTS[k];
- box.innerHTML=(data[k]||[]).map((it,i)=>`<div class="item">${f.map(x=>`<label class="f">${LB[k][x]}`+(x==='note'&&k==='howto'?`<textarea rows="2" data-k="${k}" data-i="${i}" data-f="${x}" placeholder="${PH[x]}">${esc(it[x])}</textarea>`:`<input data-k="${k}" data-i="${i}" data-f="${x}" placeholder="${k==='rules'?'e.g. No smoking indoors':k==='checklist'?'e.g. Wash dishes':PH[x]}" value="${esc(it[x])}"${k==='emergency'&&x==='number'?' type="tel"':''}>`)+'</label>').join('')}<button type="button" class="rm" data-rm="${k}" data-i="${i}" aria-label="Remove">✕</button></div>`).join('')})}
-function norm(){if(!Array.isArray(data.units))data.units=[];data.units=data.units.map(u=>Object.assign({num:'',name:'',bldg:'',note:'',wifiName:'',wifiPass:'',code:'',extra:''},u));if(!I18N[data.lang]){const sl=localStorage.getItem('wg-lang');data.lang=I18N[sl]?sl:'en'}if(!data.curB&&!data.curU&&data.units.length){const u=data.units[0];data.curB=u.bldg||'';data.curU=ukey(u)}}
+ box.innerHTML=(Array.isArray(data[k])?data[k]:[]).map((it,i)=>(it=it||{},`<div class="item">${f.map(x=>`<label class="f">${LB[k][x]}`+(x==='note'&&k==='howto'?`<textarea rows="2" data-k="${k}" data-i="${i}" data-f="${x}" placeholder="${PH[x]}">${esc(it[x])}</textarea>`:`<input data-k="${k}" data-i="${i}" data-f="${x}" placeholder="${k==='rules'?'e.g. No smoking indoors':k==='checklist'?'e.g. Wash dishes':PH[x]}" value="${esc(it[x])}"${k==='emergency'&&x==='number'?' type="tel"':''}>`)+'</label>').join('')}<button type="button" class="rm" data-rm="${k}" data-i="${i}" aria-label="Remove">✕</button></div>`)).join('')})}
+// Repair drafts saved by older versions or damaged in storage, so one bad value can't break the editor or preview.
+function sanitize(d){const b=blank();if(!d||typeof d!=='object'||Array.isArray(d))d={};
+ for(const k in b)if(!(k in LISTS)&&k in d)d[k]=str(d[k]);
+ ['welcomeT','welcomeTSrc','welcomeTLang','lang','curB','curU'].forEach(k=>{if(k in d)d[k]=str(d[k])});
+ for(const k in LISTS){let v=d[k];if(typeof v==='string')v=v.split('\n').map(x=>x.trim()).filter(Boolean).map(x=>({[LISTS[k][0]]:x}));
+  if(!Array.isArray(v))v=k==='emergency'?b.emergency:[];
+  d[k]=v.filter(o=>o&&typeof o==='object'&&!Array.isArray(o)).map(o=>Object.fromEntries(LISTS[k].map(f=>[f,str(o[f])])))}
+ d.multi=!!d.multi;d.units=(Array.isArray(d.units)?d.units:[]).filter(u=>u&&typeof u==='object'&&!Array.isArray(u)).map(u=>Object.fromEntries(UF.map(f=>[f,str(u[f])])));
+ if(d.udPending&&typeof d.udPending==='object')d.udPending=Object.fromEntries(Object.entries(d.udPending).map(([f,v])=>[f,str(v)]));else delete d.udPending;
+ return d}
+function norm(){data=sanitize(data);if(!Array.isArray(data.units))data.units=[];data.units=data.units.map(u=>Object.assign({num:'',name:'',bldg:'',note:'',wifiName:'',wifiPass:'',code:'',extra:''},u));if(!I18N[data.lang]){const sl=localStorage.getItem('wg-lang');data.lang=I18N[sl]?sl:'en'}if(!data.curB&&!data.curU&&data.units.length){const u=data.units[0];data.curB=u.bldg||'';data.curU=ukey(u)}}
 const UD=['note','wifiName','wifiPass','code','extra'],ukey=u=>u.num&&u.name?u.num+' · '+u.name:(u.name||u.num||''),same=(a,b)=>(a||'').trim().toLowerCase()===(b||'').trim().toLowerCase();
 function curUnit(make){const B=(data.curB||'').trim(),U=(data.curU||'').trim();if(!U&&!B)return null;let u=data.units.find(x=>same(x.bldg,B)&&same(ukey(x),U));
  if(!u&&make){u={num:'',name:U,bldg:B,note:'',wifiName:'',wifiPass:'',code:'',extra:''};data.units.push(u)}
@@ -119,7 +143,9 @@ function fill(){norm();form.querySelectorAll('[name]').forEach(el=>el.value=data
 function trState(){const btn=$('#btnTr');if(!btn)return;const L=data.lang||'en',M=window.WG_META||{},nm=M[L]?M[L][1]:L;const en=L==='en';$('#trBox').hidden=en;if(en)return;btn.textContent='🌐 Translate to '+nm;
  const st=$('#trStatus');if(!data.welcomeT){st.textContent='';st.className='hint'}else if(data.welcomeTLang!==L){st.textContent='⚠️ The translation below is in another language, so guests will see your original text. Translate again or type your own.';st.className='hint warn'}else if((data.welcomeTSrc||'')!==(data.welcome||'')){st.textContent='⚠️ Your welcome message changed after this translation. Translate again or update the text below.';st.className='hint warn'}else{st.textContent='✓ Guests will see this translation (with a “Show original” button).';st.className='hint'}}
 function prevUnit(){if(!data.multi)return null;const u=curUnit(false);if(u)return u;const B=(data.curB||'').trim(),U=(data.curU||'').trim(),pd=data.udPending||{};if(B||U||UD.some(f=>pd[f]))return Object.assign({},pd,{bldg:B,name:U});return null}
-function update(){trState();localStorage.setItem(KEY,JSON.stringify(data));const pv=$('#preview');pv.lang=htmlLang(data.lang||'en');pv.dir=isRTL(data.lang)?'rtl':'ltr';pv.innerHTML=render(guestData(data,prevUnit()))}
+function update(){try{trState()}catch(e){console.error(e)}const pv=$('#preview');
+ try{pv.lang=htmlLang(data.lang||'en');pv.dir=isRTL(data.lang)?'rtl':'ltr';pv.innerHTML=render(guestData(data,prevUnit()))}catch(e){console.error('wg: preview failed',e);pv.innerHTML='<div class="empty">The preview hit a problem with one of your entries. Your other details are safe — check the last thing you edited.</div>'}
+ try{localStorage.setItem(KEY,JSON.stringify(data));$('#saved').textContent='✓ Autosaved on this device.'}catch(e){console.error('wg: autosave failed',e);$('#saved').textContent='⚠️ Could not autosave on this device (storage full or blocked). Your guide is still on screen — create the link before closing.'}}
 wire($('#preview'));
 // One handler for 'input' AND 'change': some phone keyboards, autofill, datalist picks and older iOS checkboxes only fire 'change'.
 function onEdit(e){const t=e.target;if(t.id==='multi'){data.multi=t.checked;buildUnits()}else if(t.id==='uBldg'||t.id==='uWhich'){data[t.id==='uBldg'?'curB':'curU']=t.value;const u=curUnit(false),pd=data.udPending||{};UD.forEach(f=>{const el=$('#ud-'+f);if(el!==document.activeElement)el.value=u?u[f]||'':(pd[f]||'')});$('#uLabel').textContent='Link label: '+(ulabel(u||{bldg:data.curB,name:data.curU})||'—')}else if(t.dataset.ud){const u=((data.curB||'').trim()||(data.curU||'').trim())?curUnit(true):null;if(u)u[t.dataset.ud]=t.value;else{data.udPending=data.udPending||{};data.udPending[t.dataset.ud]=t.value}}else if(t.name){data[t.name]=t.value;if(t.name==='welcomeT'){data.welcomeTSrc=data.welcome;data.welcomeTLang=data.lang}if(t.name==='lang')localStorage.setItem('wg-lang',t.value)}else if(t.dataset.k){const it=(data[t.dataset.k]||[])[+t.dataset.i];if(it)it[t.dataset.f]=t.value}update()}
@@ -175,6 +201,7 @@ $('#tabEdit').onclick=()=>{document.body.classList.remove('showPrev');$('#tabEdi
 $('#tabPrev').onclick=()=>{document.body.classList.add('showPrev');$('#tabPrev').classList.add('on');$('#tabEdit').classList.remove('on');scrollTo(0,0)};
 $('#btnCopy').onclick=()=>copy($('#linkOut').value,'Link copied');$('#btnClose').onclick=()=>$('#modal').hidden=true;
 window.addEventListener('hashchange',()=>location.reload());
+const vs=$('#wgVer');if(vs)vs.textContent='Builder version v'+WG_VERSION;
 fill();
 });
 })();
